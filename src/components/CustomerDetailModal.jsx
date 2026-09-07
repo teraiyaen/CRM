@@ -51,13 +51,17 @@ export default function CustomerDetailModal({ customer, onClose, onUpdate, onDel
     // Determine active tab based on defaultTab or customer stage/status
     const [activeTab, setActiveTab] = useState(() => {
         if (defaultTab) return defaultTab;
-        const rawStage = (customer?.portal_status || customer?.status || customer?.stage || "").trim().toUpperCase();
-        if (rawStage.includes("DISBURS") || rawStage.includes("COMPLETE")) return "SUBSIDY DISBURSAL";
-        if (rawStage.includes("REQUEST")) return "SUBSIDY REQUEST";
-        if (rawStage.includes("INSPECTION") || rawStage.includes("INSPECT")) return "INSPECTION";
-        if (rawStage.includes("INSTALLATION") || rawStage.includes("INSTALL")) return "INSTALLATION";
-        if (rawStage.includes("AGREEMENT") || rawStage.includes("UPLOAD")) return "UPLOAD AGREEMENT";
-        return "VENDER SELECTION";
+        const rawStage = (customer?.portal_status || customer?.status || customer?.stage || "").trim();
+        const matched = PRIMARY_STAGES.find(s => s.id.toLowerCase() === rawStage.toLowerCase());
+        if (matched && matched.id !== 'ALL') return matched.id;
+
+        const upper = rawStage.toUpperCase();
+        if (upper.includes("DISBURS") || upper.includes("COMPLETE")) return "Subsidy Disbursal";
+        if (upper.includes("REQUEST")) return "Subsidy Request";
+        if (upper.includes("INSPECTION") || upper.includes("INSPECT")) return "Inspection";
+        if (upper.includes("INSTALLATION") || upper.includes("INSTALL")) return "Installation";
+        if (upper.includes("AGREEMENT") || upper.includes("UPLOAD")) return "Upload Agreement";
+        return "Vender Selection";
     });
 
     const [editingSection, setEditingSection] = useState(null);

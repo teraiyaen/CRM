@@ -34,6 +34,14 @@ export default function InspectionTab({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
                     <EditableDetailItem 
+                        label="Inspected / Proposed Capacity (kWp)" 
+                        field="proposed_capacity_kw" 
+                        value={editData.proposed_capacity_kw} 
+                        onChange={handleChange} 
+                        type="number"
+                        isEditing={isEditing} 
+                    />
+                    <EditableDetailItem 
                         label="Meter Charge (₹)" 
                         field="meter_charge" 
                         value={editData.meter_charge} 
@@ -49,16 +57,6 @@ export default function InspectionTab({
                         isMoney={true}
                         isEditing={isEditing} 
                     />
-                    {/* Status managed in top header & stage actions */}
-                    <div className="col-span-full">
-                        <EditableDetailItem 
-                            label="Inspection Remarks" 
-                            field="remarks" 
-                            value={editData.remarks} 
-                            onChange={handleChange} 
-                            isEditing={isEditing} 
-                        />
-                    </div>
                 </div>
             </section>
         </div>

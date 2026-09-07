@@ -13,47 +13,48 @@ export default function CustomerModalTabsRouter(props) {
     const { activeTab } = props;
     const tab = String(activeTab || '').trim().toUpperCase();
 
-    // Stage 1: Registration & Application
-    if (tab === 'REGISTRATION' || tab === 'LEADS' || tab === STAGE_IDS.REGISTRATION) {
+    // Stage 1: Vender Selection & Registration
+    if (tab.includes('VENDER') || tab.includes('VENDOR') || tab.includes('REGISTRATION') || tab.includes('LEADS')) {
         return <RegistrationTab {...props} />;
     }
 
-    // Stage 2: Feasibility Approval
-    if (tab === 'FEASIBILITY' || tab === STAGE_IDS.FEASIBILITY) {
-        return <FeasibilityTab {...props} />;
-    }
-
-    // Stage 3: Vendor Selection & Tripartite Agreement
-    if (tab === 'UPLOAD AGREEMENT' || tab === 'UPLOAD_AGREEMENT' || tab === 'AGREEMENT' || tab === STAGE_IDS.UPLOAD_AGREEMENT) {
+    // Stages 2 & 3: Upload Agreement (Pending & Final)
+    if (tab.includes('AGREEMENT')) {
         return <AgreementTab {...props} />;
     }
 
     // Stage 4: Rooftop Plant Installation
-    if (tab === 'INSTALLATION' || tab === 'INSTALLATION_STATUS' || tab === STAGE_IDS.INSTALLATION) {
+    if (tab.includes('INSTALLATION') || tab.includes('INSTALL')) {
         return <PlantInstallationTab {...props} />;
     }
 
-    // Stage 5: Inspection & Net Metering
-    if (tab === 'INSPECTION' || tab === 'DISCOM_INSPECTION' || tab === 'METER_INSTALLATION' || tab === STAGE_IDS.INSPECTION) {
+    // Stages 5 & 6: Inspection (Pending & Final) & Net Metering
+    if (tab.includes('INSPECT') || tab.includes('METER')) {
         return <InspectionTab {...props} />;
     }
 
-    // Stage 6: Subsidy Claim
-    if (tab === 'SUBSIDY REQUEST' || tab === 'SUBSIDY_REQUEST' || tab === 'LOAN' || tab === 'CASH' || tab === STAGE_IDS.SUBSIDY_REQUEST) {
+    // Stage 7: Subsidy Request / Claim
+    if (tab === 'SUBSIDY REQUEST' || tab.includes('REQUEST') || tab.includes('CLAIM') || tab === 'LOAN' || tab === 'CASH') {
         return <SubsidyClaimTab {...props} />;
     }
 
-    // Stage 7: Subsidy Disbursed (DBT)
-    if (tab === 'SUBSIDY DISBURSAL' || tab === 'SUBSIDY_DISBURSAL' || tab === 'SUBSIDY_STATUS' || tab === 'COMPLETED' || tab === STAGE_IDS.SUBSIDY_DISBURSAL) {
+    // Stages 8, 9, 10, 11: Subsidy Disbursal (Pending, Disbursal, Disbursed, COMPLETE)
+    if (tab.includes('DISBURS') || tab.includes('COMPLETE') || tab.includes('DBT')) {
         return <SubsidyDisbursalTab {...props} />;
     }
 
+    // Technical Feasibility Approval
+    if (tab.includes('FEASIBILITY')) {
+        return <FeasibilityTab {...props} />;
+    }
+
     // Notes & Remarks / History Tab
-    if (tab === 'HISTORY' || tab === 'NOTES' || tab === 'REMARKS') {
+    if (tab.includes('HISTORY') || tab.includes('NOTE') || tab.includes('REMARK')) {
         return <HistoryTab {...props} />;
     }
 
     // Default fallback to Registration
     return <RegistrationTab {...props} />;
 }
+
 
