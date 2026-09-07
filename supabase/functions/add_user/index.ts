@@ -6,8 +6,6 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 // which surfaces in the UI as "Could not reach the account-creation service",
 // indistinguishable from the function being undeployed.
 const ALLOWED_ORIGINS = [
-    "https://watersun.deeprootsystems.in",
-    "https://watersun9.github.io",
     "http://localhost:5173",
     "http://localhost:3000",
 ]

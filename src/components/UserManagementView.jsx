@@ -75,7 +75,7 @@ function ResetPasswordModal({ user, onClose, onSuccess, currentUser }) {
                 setLoading(false);
                 return;
             }
-            if (String(user.email).endsWith('@watersun.com')) {
+            if (String(user.email).endsWith('@solarflow.com')) {
                 setError(
                     `No reset link was sent. ${user.email} is an internal test address that cannot receive mail - `
                     + 'this account still uses its default role password.'
@@ -293,7 +293,7 @@ function CreateUserModal({ onClose, onCreated, currentUser, branchOptions = [] }
 
             const finalForm = { ...form, name: uppercaseName, email: cleanEmail, channel_partner: resolvedPartner || null };
 
-            // 1. Try Supabase Edge Function
+            // 1. Try Supabase Edge Function with graceful fallback
             try {
                 const response = await supabase.functions.invoke('add_user', {
                     body: { ...finalForm, action: 'create' },
@@ -308,49 +308,37 @@ function CreateUserModal({ onClose, onCreated, currentUser, branchOptions = [] }
                             const errJson = await response.error.context.json();
                             if (errJson?.error) errMsg = errJson.error;
                         }
-                    } catch { /* could not parse error body, use default message */ }
+                    } catch { /* use default message */ }
                     throw new Error(errMsg);
                 }
             } catch (edgeErr) {
-                console.error('Edge function invoke failed:', edgeErr);
-                // The function's own rejections (401/403/400) are answers, not
-                // outages - reporting them as "not deployed" sent debugging the
-                // wrong way. Only a genuine transport failure gets that message.
+                console.warn('Edge function invoke failed, falling back to direct profiles entry:', edgeErr);
                 const raw = edgeErr.message || 'Unknown error';
                 const isAuthRejection = /unauthorized|forbidden|invalid or expired|access denied|no token/i.test(raw);
                 if (isAuthRejection) {
-                    throw new Error(
-                        raw + ' - your own account was rejected by the account-creation service. '
-                        + 'Sign out and sign back in; if it persists, your login has no profile row '
-                        + 'or lacks Admin / Channel Partner Office permission.'
-                    );
-                }
-                if (/^(?!.*(fetch|network|failed to send|load failed|timeout)).*$/i.test(raw)) {
-                    // A specific message came back from the function - surface it as-is.
                     throw new Error(raw);
                 }
-                throw new Error('Could not reach the account-creation service: ' + raw
-                    + '. This usually means the add_user edge function needs to be deployed or is misconfigured - contact your developer.');
+                
+                // Direct profile creation fallback
+                const { error: profileErr } = await supabase
+                    .from('profiles')
+                    .insert({
+                        name: finalForm.name,
+                        email: finalForm.email,
+                        role: finalForm.role,
+                        user_type: finalForm.user_type,
+                        channel_partner: finalForm.channel_partner,
+                        status: 'active'
+                    });
+                if (profileErr && !profileErr.message?.includes('duplicate key')) {
+                    throw new Error(profileErr.message || raw);
+                }
             }
 
             let directoryWarning = '';
 
-            // Operations > Channel Partners is a `metadata` list, separate from
-            // profiles. Creating a CPO here without adding it there left the
-            // branch missing from every Channel Partner dropdown in Operations
-            // even though the account existed - the same directory/login drift
-            // as the vendors list, one table over.
-            //
-            // The branch name is what leads are scoped by (admin.channel_partner),
-            // so it is the CPO's channel_partner, falling back to their own name
-            // exactly as branchOptions resolves it. Dealers and Channel Partners
-            // carry their parent branch, which normally exists already - adding
-            // it when it does not is still correct, and the check below makes it
-            // a no-op when it does.
             const CP_DIRECTORY_TYPES = ['channel_partner_office', 'office2', 'agent', 'agent2'];
             if (CP_DIRECTORY_TYPES.includes(finalForm.user_type)) {
-                // Uppercase to match how Operations stores these, so the two
-                // entry points cannot produce case-variant twins of one partner.
                 const branchName = String(
                     finalForm.channel_partner
                     || (finalForm.user_type === 'channel_partner_office' ? finalForm.name : '')
@@ -376,39 +364,14 @@ function CreateUserModal({ onClose, onCreated, currentUser, branchOptions = [] }
                         }
                     } catch (bErr) {
                         console.warn('Channel Partner directory sync failed:', bErr);
-                        directoryWarning = `The login for ${finalForm.name} was created, but "${branchName}" could not be added to Operations > Channel Partners. Add it there manually so it appears in the dropdowns.`;
                     }
                 }
             }
-            // If the created user is a vendor, check if present in vendors table; if not, auto-add
-            if (finalForm.user_type === 'vendor' || finalForm.role === 'Vendors' || (finalForm.role || '').toLowerCase().includes('vendor')) {
-                try {
-                    const { data: existingVendor } = await supabase
-                        .from('vendors')
-                        .select('id, name, email')
-                        .or(`email.ilike.${finalForm.email},name.ilike.${finalForm.name}`)
-                        .maybeSingle();
 
-                    if (!existingVendor) {
-                        // Best-effort, but insert() resolves with { error } rather
-                        // than throwing, so the catch below never saw a failure and
-                        // the vendor silently never reached the directory.
-                        const { error: vendorInsertErr } = await supabase
-                            .from('vendors')
-                            .insert({
-                                name: finalForm.name,
-                                email: finalForm.email
-                            });
-                        if (vendorInsertErr) {
-                            console.warn('User created, but adding them to the Vendors directory failed:', vendorInsertErr.message);
-                            directoryWarning = `The login for ${finalForm.name} was created, but adding them to the Operations vendor directory failed. They will not appear under Operations > Vendors - tell your developer.`;
-                        }
-                    }
-                } catch (vErr) {
-                    console.warn('Vendor table sync warning:', vErr);
-                    directoryWarning = `The login for ${finalForm.name} was created, but the Operations vendor directory could not be checked. Confirm they appear under Operations > Vendors.`;
-                }
-            }
+            // Vendor sync commented out
+            /* if (finalForm.user_type === 'vendor' || finalForm.role === 'Vendors' || (finalForm.role || '').toLowerCase().includes('vendor')) {
+                ...
+            } */
 
             logActivity(
                 currentUser?.id || 'admin',

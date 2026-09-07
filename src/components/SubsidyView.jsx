@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Tag, Search, RefreshCw, ChevronDown } from 'lucide-react';
-import { SUBSIDY_TAGS, SUBSIDY_TAG_COLORS, CUSTOMER_CARD_COLUMNS } from '../constants';
+import { Tag, Search, RefreshCw, ChevronDown, CheckCircle2, Clock, Banknote, ShieldAlert } from 'lucide-react';
+import { SUBSIDY_TAGS, SUBSIDY_TAG_COLORS } from '../constants';
 import { normalizeSubsidyTag } from '../utils';
 import { supabase } from '../supabase';
 
@@ -28,7 +28,7 @@ export default function SubsidyView({ onSelectCustomer, isChannelPartnerOffice, 
         return () => clearTimeout(timer);
     }, [searchTerm]);
 
-    // Fetch True Exact Counts via Supabase HEAD queries (bypasses 1,000 PostgREST row limits)
+    // Fetch True Exact Counts via Supabase HEAD queries
     const fetchCounts = useCallback(async () => {
         try {
             const targetPartner = isChannelPartnerOffice ? partnerName : (channelPartnerFilter?.trim() || null);
@@ -36,25 +36,21 @@ export default function SubsidyView({ onSelectCustomer, isChannelPartnerOffice, 
             // 1. Total Count Query (HEAD exact count)
             let totalQuery = supabase
                 .from('admin')
-                .select('*', { count: 'exact', head: true })
-                .is('deleted_at', null)
-                .not('subsidy_tag', 'is', null)
-                .neq('subsidy_tag', '');
+                .select('*', { count: 'exact', head: true });
 
             if (targetPartner) {
-                totalQuery = totalQuery.ilike('channel_partner', `%${targetPartner}%`);
+                totalQuery = totalQuery.or(`dealer.ilike.%${targetPartner}%,ref_agent.ilike.%${targetPartner}%`);
             }
 
-            // 2. Parallel Head queries for every tag in SUBSIDY_TAGS
+            // 2. Head queries for tags
             const countPromises = SUBSIDY_TAGS.map(async (tag) => {
                 let tagQuery = supabase
                     .from('admin')
                     .select('*', { count: 'exact', head: true })
-                    .is('deleted_at', null)
-                    .ilike('subsidy_tag', `%${tag.id}%`);
+                    .or(`status.ilike.%${tag.id}%,portal_status.ilike.%${tag.id}%,financing_tag.ilike.%${tag.id}%`);
 
                 if (targetPartner) {
-                    tagQuery = tagQuery.ilike('channel_partner', `%${targetPartner}%`);
+                    tagQuery = tagQuery.or(`dealer.ilike.%${targetPartner}%,ref_agent.ilike.%${targetPartner}%`);
                 }
 
                 const { count, error } = await tagQuery;
@@ -90,34 +86,24 @@ export default function SubsidyView({ onSelectCustomer, isChannelPartnerOffice, 
 
             let query = supabase
                 .from('admin')
-                // Was select('*'): ~90 columns per row for a card that renders a
-                // handful. CUSTOMER_CARD_COLUMNS was already imported here
-                // and unused. The detail modal fetches the full record on open.
-                .select(CUSTOMER_CARD_COLUMNS)
-                .is('deleted_at', null)
+                .select('*')
                 .order('created_at', { ascending: false })
                 .range(pageNum * PAGE_SIZE, (pageNum + 1) * PAGE_SIZE - 1);
 
             if (targetPartner) {
-                query = query.ilike('channel_partner', `%${targetPartner}%`);
+                query = query.or(`dealer.ilike.%${targetPartner}%,ref_agent.ilike.%${targetPartner}%`);
             }
 
             if (activeFilter) {
-                query = query.ilike('subsidy_tag', `%${activeFilter}%`);
-            } else {
-                query = query.not('subsidy_tag', 'is', null).neq('subsidy_tag', '');
+                query = query.or(`status.ilike.%${activeFilter}%,portal_status.ilike.%${activeFilter}%,financing_tag.ilike.%${activeFilter}%`);
             }
 
-            // Direct Backend Search across name, phone, consumer_no
+            // Direct Backend Search across name, mobile, consumer number, application number
             if (debouncedSearch) {
-                query = query.or(`customer_name.ilike.%${debouncedSearch}%,phone_number.ilike.%${debouncedSearch}%,consumer_no.ilike.%${debouncedSearch}%`);
+                query = query.or(`consumer_name.ilike.%${debouncedSearch}%,mobile_no.ilike.%${debouncedSearch}%,consumer_number.ilike.%${debouncedSearch}%,application_number.ilike.%${debouncedSearch}%`);
             }
 
             const { data, error } = await query;
-            // The error used to be discarded here. When the search failed
-            // (42883: ilike on the numeric phone_number column) the list simply
-            // did not update, so the box looked like it had found nothing -
-            // indistinguishable from a genuine empty result.
             if (error) {
                 console.error('Search/filter query failed:', error);
                 setLoadError(error.message || 'The list could not be loaded.');
@@ -136,7 +122,6 @@ export default function SubsidyView({ onSelectCustomer, isChannelPartnerOffice, 
                 }
                 setHasMore(data.length === PAGE_SIZE);
             } else {
-                console.error('Supabase error fetching subsidy data:', error);
                 if (!isAppend) setCustomers([]);
                 setHasMore(false);
             }
@@ -167,13 +152,16 @@ export default function SubsidyView({ onSelectCustomer, isChannelPartnerOffice, 
 
     return (
         <div className="space-y-6 animate-in fade-in duration-300">
-
             {loadError && (
                 <div className="bg-red-50 border border-red-200 rounded-2xl p-3 flex items-start gap-2">
-                    <span className="text-xs font-bold text-red-800">This list could not be loaded.</span>
-                    <span className="text-[11px] text-red-700 font-medium">{loadError}</span>
+                    <ShieldAlert className="w-4 h-4 text-red-600 mt-0.5" />
+                    <div>
+                        <span className="text-xs font-bold text-red-800">This list could not be loaded: </span>
+                        <span className="text-[11px] text-red-700 font-medium">{loadError}</span>
+                    </div>
                 </div>
             )}
+            
             {/* Header Controls: Search & Total Counts */}
             <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
                 {/* Real-time Backend Search */}
@@ -181,7 +169,7 @@ export default function SubsidyView({ onSelectCustomer, isChannelPartnerOffice, 
                     <Search className="absolute left-3.5 top-3 w-4 h-4 text-stone-400" />
                     <input
                         type="text"
-                        placeholder="Search name, phone, consumer no..."
+                        placeholder="Search consumer name, mobile, consumer no..."
                         value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
                         className="w-full pl-10 pr-4 py-2.5 bg-white border border-stone-200 rounded-2xl text-xs font-semibold text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-300 shadow-2xs transition-all"
@@ -270,8 +258,16 @@ export default function SubsidyView({ onSelectCustomer, isChannelPartnerOffice, 
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                         {customers.map(c => {
-                            const normTag = normalizeSubsidyTag(c.subsidy_tag);
+                            const displayName = c.consumer_name || c.customer_name || 'Unnamed Consumer';
+                            const displayPhone = c.mobile_no || c.phone_number || '';
+                            const displayConsumerNo = c.consumer_number || c.consumer_no || '';
+                            const displayLocation = c.sub_division || c.circle || c.address || c.villages || '';
+                            const currentTag = c.financing_tag || c.subsidy_tag || c.status || 'Inprocess';
+                            const normTag = normalizeSubsidyTag(currentTag);
                             const tagStyle = SUBSIDY_TAG_COLORS[normTag] || { bg: 'bg-stone-100', text: 'text-stone-700', border: 'border-stone-200' };
+                            const capacity = c.proposed_capacity_kw || c.system_capacity_kwp || '–';
+                            const stageName = c.portal_status || c.status || c.stage || '1. Registration';
+
                             return (
                                 <button
                                     key={c.id}
@@ -281,14 +277,14 @@ export default function SubsidyView({ onSelectCustomer, isChannelPartnerOffice, 
                                     <div className="flex justify-between items-start mb-2 gap-2">
                                         <div className="min-w-0">
                                             <p className="font-bold text-stone-900 text-sm group-hover:text-amber-700 transition-colors truncate">
-                                                {c.customer_name || 'Unnamed Customer'}
+                                                {displayName}
                                             </p>
                                             <p className="text-[10px] text-stone-400 font-mono mt-0.5 truncate">
-                                                {[c.villages, c.phone_number].filter(Boolean).join(' · ')}
+                                                {[displayConsumerNo && `#${displayConsumerNo}`, displayLocation, displayPhone].filter(Boolean).join(' · ')}
                                             </p>
                                         </div>
                                         <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider flex-shrink-0 border ${tagStyle.bg} ${tagStyle.text} ${tagStyle.border}`}>
-                                            {c.subsidy_tag || 'Pending'}
+                                            {currentTag}
                                         </span>
                                     </div>
 
@@ -296,13 +292,13 @@ export default function SubsidyView({ onSelectCustomer, isChannelPartnerOffice, 
                                         <div>
                                             <p className="text-stone-400 font-bold uppercase tracking-wide">Capacity</p>
                                             <p className="text-xs font-semibold text-stone-700 mt-0.5">
-                                                {c.system_capacity_kwp ? `${c.system_capacity_kwp} kWp` : '–'}
+                                                {capacity ? `${capacity} kWp` : '–'}
                                             </p>
                                         </div>
                                         <div>
                                             <p className="text-stone-400 font-bold uppercase tracking-wide">Current Stage</p>
                                             <p className="text-xs font-bold text-amber-600 truncate mt-0.5">
-                                                {c.stage || 'LEADS'}
+                                                {stageName}
                                             </p>
                                         </div>
                                     </div>

@@ -121,12 +121,12 @@ export const Page4 = ({ data, fontSizeClass = 'text-[17px]' }) => {
 
             <div>
               <span className="font-semibold">Name - </span>
-              <span className="font-normal">{data.vendorName || 'Watersun Electrical Solutions Pvt Ltd'}</span>
+              <span className="font-normal">{data.vendorName || 'Teriyan Enterprises'}</span>
             </div>
 
             <div>
               <span className="font-semibold">Address- </span>
-              <span className="font-normal">{data.vendorAddress || 'Plot No 40 GIDC Estate Radhanpur'}</span>
+              <span className="font-normal">{data.vendorAddress || 'Plot No. 12, GIDC Industrial Estate, Near Power Grid Substation, Radhanpur, Patan, Gujarat - 385340'}</span>
             </div>
 
             {/* Vendor Stamp & Signature Box — Enlarged by 30% and shifted center-right */}

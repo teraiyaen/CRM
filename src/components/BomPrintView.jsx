@@ -40,7 +40,7 @@ const dash = (value) => {
 const PageHeader = ({ label, page }) => (
     <div className="mb-4">
         <div className="text-center">
-            <h1 className="text-xl font-black uppercase tracking-wider text-stone-950">Watersun Electrical Solutions Pvt Ltd</h1>
+            <h1 className="text-xl font-black uppercase tracking-wider text-stone-950">Teriyan Enterprises</h1>
             <p className="text-[11px] font-semibold text-stone-600 mt-0.5">Solar PV Project Integration &amp; Material Loading Checklist</p>
         </div>
         <div className="flex items-center justify-between mt-3">
@@ -56,7 +56,7 @@ const PageHeader = ({ label, page }) => (
 
 const PageFooter = ({ page }) => (
     <div className="mt-6 border-t border-stone-300 pt-3 flex justify-between text-[9px] text-stone-400 font-semibold">
-        <div>Watersun Electrical Solutions Pvt Ltd</div>
+        <div>Teriyan Enterprises</div>
         <div>BOM Page {page} of 2</div>
     </div>
 );

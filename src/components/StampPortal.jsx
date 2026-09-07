@@ -460,7 +460,7 @@ export default function StampPortal({ user, onLogout, onOpenDevSwitcher }) {
                     // Only what the queue renders. It was select("*"), so every
                     // stamp maker pulled ~90 columns per record - including the
                     // vendor commission - for the whole queue.
-                    .select("id, customer_name, phone_number, consumer_no, folder_no, villages, stage, pm_surya_ghar_stamp, discom_submission, deleted_at, created_at")
+                    .select("id, customer_name, phone_number, consumer_no, folder_no, villages, stage, pm_surya_ghar_stamp, discom_submission,  created_at")
                     // Stage is deliberately not filtered — a record can be sent to
                     // the stamp maker without formally sitting in DISCOM SUBMISSION.
                     // The "sent to stamp" test is done here rather than in JS: this
@@ -473,7 +473,7 @@ export default function StampPortal({ user, onLogout, onOpenDevSwitcher }) {
                     // here: assigned_stamp_maker is written from profiles.name
                     // via the dropdown, which is the same value as user.name.
                     .eq("discom_submission->>assigned_stamp_maker", (user?.name || '').trim())
-                    .is("deleted_at", null)
+                    
                     .order("created_at", { ascending: false })
                     .range(from, from + pageSize - 1);
                 if (error) throw error;
@@ -530,7 +530,7 @@ export default function StampPortal({ user, onLogout, onOpenDevSwitcher }) {
                 // reappears in this queue despite being filtered on load.
                 const myNameRt = String(user?.name || '').trim().toLowerCase();
                 const assignedRt = String(record?.discom_submission?.assigned_stamp_maker || '').trim().toLowerCase();
-                const isStampActive = record && !record.deleted_at &&
+                const isStampActive = record && 
                     record.discom_submission?.sent_to_stamp_maker === true &&
                     !record.discom_submission?.stamp_sent &&
                     !!assignedRt && assignedRt === myNameRt;
@@ -658,7 +658,7 @@ export default function StampPortal({ user, onLogout, onOpenDevSwitcher }) {
                 .eq("discom_submission->>sent_to_stamp_maker", "true")
                 .eq("discom_submission->>stamp_sent", "true")
                 .eq("discom_submission->>assigned_stamp_maker", (user?.name || '').trim())
-                .is("deleted_at", null);
+                ;
             if (error) throw error;
             const myName = String(user?.name || '').trim().toLowerCase();
             const rows = (data || [])

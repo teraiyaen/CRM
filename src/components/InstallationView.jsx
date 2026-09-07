@@ -1,22 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Wrench, Search, RefreshCw, ChevronDown } from 'lucide-react';
+import { Wrench, Search, RefreshCw, ChevronDown, CheckCircle2, Zap, ShieldAlert } from 'lucide-react';
 import { normalizeInstallationStatus } from '../utils';
-import { INSTALLATION_TAGS, INSTALLATION_TAG_COLORS, CUSTOMER_CARD_COLUMNS } from '../constants';
+import { INSTALLATION_TAGS, INSTALLATION_TAG_COLORS } from '../constants';
 import { supabase } from '../supabase';
 
 export { normalizeInstallationStatus };
 
 const PAGE_SIZE = 50;
-
-// Legacy rows hold 'Yes' where the tag is now 'Installed' (and 'Process' where it
-// is 'In process'). Filtering on the tag id alone silently omits them, which is
-// what hid every installed customer from the payouts ledger.
-const statusFilterFor = (tagId) => {
-    const alias = { 'Installed': 'yes', 'In process': 'process' }[tagId];
-    return alias
-        ? `installation_status.ilike.%${tagId}%,installation_status.ilike.%${alias}%`
-        : null;
-};
 
 export default function InstallationView({ onSelectCustomer, isChannelPartnerOffice, partnerName, channelPartnerFilter }) {
     const [activeFilter, setActiveFilter] = useState(null);
@@ -40,7 +30,7 @@ export default function InstallationView({ onSelectCustomer, isChannelPartnerOff
         return () => clearTimeout(timer);
     }, [searchTerm]);
 
-    // Fetch True Exact Counts via Supabase HEAD queries (bypasses 1,000 PostgREST row limits)
+    // Fetch True Exact Counts via Supabase HEAD queries
     const fetchCounts = useCallback(async () => {
         try {
             const targetPartner = isChannelPartnerOffice ? partnerName : (channelPartnerFilter?.trim() || null);
@@ -48,29 +38,30 @@ export default function InstallationView({ onSelectCustomer, isChannelPartnerOff
             // 1. Total Count Query (HEAD exact count)
             let totalQuery = supabase
                 .from('admin')
-                .select('*', { count: 'exact', head: true })
-                .is('deleted_at', null)
-                .not('installation_status', 'is', null)
-                .neq('installation_status', '');
+                .select('*', { count: 'exact', head: true });
 
             if (targetPartner) {
-                totalQuery = totalQuery.ilike('channel_partner', `%${targetPartner}%`);
+                totalQuery = totalQuery.or(`dealer.ilike.%${targetPartner}%,ref_agent.ilike.%${targetPartner}%`);
             }
 
-            // 2. Parallel Head queries for every tag in INSTALLATION_TAGS
+            // 2. Head queries for every tag in INSTALLATION_TAGS
             const countPromises = INSTALLATION_TAGS.map(async (tag) => {
                 let tagQuery = supabase
                     .from('admin')
-                    .select('*', { count: 'exact', head: true })
-                    .is('deleted_at', null)
-                    ;
-                const tagOr = statusFilterFor(tag.id);
-                tagQuery = tagOr
-                    ? tagQuery.or(tagOr)
-                    : tagQuery.ilike('installation_status', `%${tag.id}%`);
+                    .select('*', { count: 'exact', head: true });
+
+                if (tag.id === 'Installed') {
+                    tagQuery = tagQuery.or(`portal_status.ilike.%Install%,status.ilike.%Install%,portal_status.ilike.%Inspection%,status.ilike.%Inspection%,portal_status.ilike.%Subsidy%,status.ilike.%Subsidy%`);
+                } else if (tag.id === 'In process') {
+                    tagQuery = tagQuery.or(`portal_status.ilike.%Process%,portal_status.ilike.%Agreement%,portal_status.ilike.%Feasibility%,status.ilike.%Agreement%,status.ilike.%Feasibility%`);
+                } else if (tag.id === 'Giveup') {
+                    tagQuery = tagQuery.or(`portal_status.ilike.%Giveup%,portal_status.ilike.%Cancel%,portal_status.ilike.%Reject%,status.ilike.%Giveup%`);
+                } else {
+                    tagQuery = tagQuery.or(`portal_status.ilike.%Pending%,portal_status.ilike.%Registration%,status.ilike.%Registration%`);
+                }
 
                 if (targetPartner) {
-                    tagQuery = tagQuery.ilike('channel_partner', `%${targetPartner}%`);
+                    tagQuery = tagQuery.or(`dealer.ilike.%${targetPartner}%,ref_agent.ilike.%${targetPartner}%`);
                 }
 
                 const { count, error } = await tagQuery;
@@ -106,37 +97,32 @@ export default function InstallationView({ onSelectCustomer, isChannelPartnerOff
 
             let query = supabase
                 .from('admin')
-                // Was select('*'): ~90 columns per row for a card that renders a
-                // handful. CUSTOMER_CARD_COLUMNS was already imported here
-                // and unused. The detail modal fetches the full record on open.
-                .select(`${CUSTOMER_CARD_COLUMNS}, installation_date, material_delivery_date`)
-                .is('deleted_at', null)
+                .select('*')
                 .order('created_at', { ascending: false })
                 .range(pageNum * PAGE_SIZE, (pageNum + 1) * PAGE_SIZE - 1);
 
             if (targetPartner) {
-                query = query.ilike('channel_partner', `%${targetPartner}%`);
+                query = query.or(`dealer.ilike.%${targetPartner}%,ref_agent.ilike.%${targetPartner}%`);
             }
 
             if (activeFilter) {
-                const filterOr = statusFilterFor(activeFilter);
-                query = filterOr
-                    ? query.or(filterOr)
-                    : query.ilike('installation_status', `%${activeFilter}%`);
-            } else {
-                query = query.not('installation_status', 'is', null).neq('installation_status', '');
+                if (activeFilter === 'Installed') {
+                    query = query.or(`portal_status.ilike.%Install%,status.ilike.%Install%,portal_status.ilike.%Inspection%,status.ilike.%Inspection%,portal_status.ilike.%Subsidy%,status.ilike.%Subsidy%`);
+                } else if (activeFilter === 'In process') {
+                    query = query.or(`portal_status.ilike.%Process%,portal_status.ilike.%Agreement%,portal_status.ilike.%Feasibility%,status.ilike.%Agreement%,status.ilike.%Feasibility%`);
+                } else if (activeFilter === 'Giveup') {
+                    query = query.or(`portal_status.ilike.%Giveup%,portal_status.ilike.%Cancel%,portal_status.ilike.%Reject%,status.ilike.%Giveup%`);
+                } else {
+                    query = query.or(`portal_status.ilike.%Pending%,portal_status.ilike.%Registration%,status.ilike.%Registration%`);
+                }
             }
 
-            // Direct Backend Search across name, phone, consumer_no
+            // Direct Backend Search across name, mobile, consumer number, application number
             if (debouncedSearch) {
-                query = query.or(`customer_name.ilike.%${debouncedSearch}%,phone_number.ilike.%${debouncedSearch}%,consumer_no.ilike.%${debouncedSearch}%`);
+                query = query.or(`consumer_name.ilike.%${debouncedSearch}%,mobile_no.ilike.%${debouncedSearch}%,consumer_number.ilike.%${debouncedSearch}%,application_number.ilike.%${debouncedSearch}%`);
             }
 
             const { data, error } = await query;
-            // The error used to be discarded here. When the search failed
-            // (42883: ilike on the numeric phone_number column) the list simply
-            // did not update, so the box looked like it had found nothing -
-            // indistinguishable from a genuine empty result.
             if (error) {
                 console.error('Search/filter query failed:', error);
                 setLoadError(error.message || 'The list could not be loaded.');
@@ -155,7 +141,6 @@ export default function InstallationView({ onSelectCustomer, isChannelPartnerOff
                 }
                 setHasMore(data.length === PAGE_SIZE);
             } else {
-                console.error('Supabase error fetching installation data:', error);
                 if (!isAppend) setCustomers([]);
                 setHasMore(false);
             }
@@ -186,13 +171,16 @@ export default function InstallationView({ onSelectCustomer, isChannelPartnerOff
 
     return (
         <div className="space-y-6 animate-in fade-in duration-300">
-
             {loadError && (
                 <div className="bg-red-50 border border-red-200 rounded-2xl p-3 flex items-start gap-2">
-                    <span className="text-xs font-bold text-red-800">This list could not be loaded.</span>
-                    <span className="text-[11px] text-red-700 font-medium">{loadError}</span>
+                    <ShieldAlert className="w-4 h-4 text-red-600 mt-0.5" />
+                    <div>
+                        <span className="text-xs font-bold text-red-800">This list could not be loaded: </span>
+                        <span className="text-[11px] text-red-700 font-medium">{loadError}</span>
+                    </div>
                 </div>
             )}
+            
             {/* Search & Total Counts Bar */}
             <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
                 {/* Real-time Backend Search */}
@@ -200,7 +188,7 @@ export default function InstallationView({ onSelectCustomer, isChannelPartnerOff
                     <Search className="absolute left-3.5 top-3 w-4 h-4 text-stone-400" />
                     <input
                         type="text"
-                        placeholder="Search name, phone, consumer no..."
+                        placeholder="Search consumer name, mobile, consumer no..."
                         value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
                         className="w-full pl-10 pr-4 py-2.5 bg-white border border-stone-200 rounded-2xl text-xs font-semibold text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-300 shadow-2xs transition-all"
@@ -289,8 +277,18 @@ export default function InstallationView({ onSelectCustomer, isChannelPartnerOff
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                         {customers.map(c => {
-                            const normTag = normalizeInstallationStatus(c.installation_status);
+                            const displayName = c.consumer_name || c.customer_name || 'Unnamed Consumer';
+                            const displayPhone = c.mobile_no || c.phone_number || '';
+                            const displayConsumerNo = c.consumer_number || c.consumer_no || '';
+                            const displayLocation = c.sub_division || c.circle || c.address || c.villages || '';
+                            const currentTag = c.portal_status || c.status || c.installation_status || 'Pending';
+                            const normTag = normalizeInstallationStatus(currentTag);
                             const tagStyle = INSTALLATION_TAG_COLORS[normTag] || { bg: 'bg-stone-100', text: 'text-stone-700', border: 'border-stone-200' };
+                            const capacity = c.proposed_capacity_kw || c.system_capacity_kwp || '0';
+                            const panelInfo = [c.panel_brand || c.module_brand, c.panel_quantity ? `${c.panel_quantity} pcs` : null].filter(Boolean).join(' · ') || 'Panel Not Assigned';
+                            const inverterInfo = [c.inverter_brand || c.inverter_make, c.inverter_capacity_kw ? `${c.inverter_capacity_kw} kW` : null].filter(Boolean).join(' · ') || 'Inverter Not Assigned';
+                            const dateInfo = c.dispatch_date || c.installation_date || c.submitted_on || '–';
+
                             return (
                                 <button
                                     key={c.id}
@@ -300,34 +298,35 @@ export default function InstallationView({ onSelectCustomer, isChannelPartnerOff
                                     <div className="flex justify-between items-start mb-2 gap-2">
                                         <div className="min-w-0">
                                             <p className="font-bold text-stone-900 text-sm group-hover:text-amber-700 transition-colors truncate">
-                                                {c.customer_name || 'Unnamed Customer'}
+                                                {displayName}
                                             </p>
                                             <p className="text-[10px] text-stone-400 font-mono mt-0.5 truncate">
-                                                {[c.villages, c.phone_number].filter(Boolean).join(' · ')}
+                                                {[displayConsumerNo && `#${displayConsumerNo}`, displayLocation, displayPhone].filter(Boolean).join(' · ')}
                                             </p>
                                         </div>
                                         <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider flex-shrink-0 border ${tagStyle.bg} ${tagStyle.text} ${tagStyle.border}`}>
-                                            {c.installation_status || 'Pending'}
+                                            {currentTag}
                                         </span>
                                     </div>
 
                                     <div className="grid grid-cols-3 gap-2 pt-2.5 border-t border-stone-100 text-[10px]">
                                         <div>
                                             <p className="text-stone-400 font-bold uppercase tracking-wide">Capacity</p>
-                                            <p className="text-xs font-semibold text-stone-700 mt-0.5">
-                                                {c.system_capacity_kwp ? `${c.system_capacity_kwp} kWp` : '–'}
+                                            <p className="text-xs font-semibold text-stone-700 mt-0.5 flex items-center gap-1">
+                                                <Zap className="w-3 h-3 text-amber-500 shrink-0" />
+                                                {capacity} kWp
                                             </p>
                                         </div>
                                         <div>
-                                            <p className="text-stone-400 font-bold uppercase tracking-wide">Delivery Date</p>
-                                            <p className="text-xs font-semibold text-stone-800 mt-0.5 truncate">
-                                                {c.material_delivery_date || c.installation_date || '–'}
+                                            <p className="text-stone-400 font-bold uppercase tracking-wide">Panel BOM</p>
+                                            <p className="text-xs font-semibold text-stone-800 mt-0.5 truncate" title={panelInfo}>
+                                                {panelInfo}
                                             </p>
                                         </div>
                                         <div>
-                                            <p className="text-stone-400 font-bold uppercase tracking-wide">Vendor / Tech</p>
-                                            <p className="text-xs font-semibold text-amber-600 truncate mt-0.5">
-                                                {c.vendor || '–'}
+                                            <p className="text-stone-400 font-bold uppercase tracking-wide">Date / Tech</p>
+                                            <p className="text-xs font-semibold text-amber-600 truncate mt-0.5" title={inverterInfo}>
+                                                {dateInfo}
                                             </p>
                                         </div>
                                     </div>

@@ -1,917 +1,442 @@
-import { leadSchema } from '../utils/validation';
-// src/components/AddLeadModal.jsx  -  Watersun Electrical Solutions Pvt Ltd
-// ─────────────────────────────────────────────────────────────────────────────
+import React, { useState } from 'react';
+import { X, User, Phone, Mail, MapPin, Zap, Building2, ShieldCheck, IndianRupee, Save, Plus } from 'lucide-react';
+import { supabase } from '../supabase';
 
-import { useState, useEffect, useRef } from 'react';
-import { 
-    X, Plus, User, ClipboardList, Paperclip, Eye, 
-    Upload, FileText, Image as ImageIcon, Loader2, Banknote, AlertTriangle, Calendar
-} from 'lucide-react';
-import { DEFAULT_LEAD_FORM } from '../models';
-import { FilePreviewModal } from './modal-tabs/shared';
-import { toIndianCommas, fetchAgent2SubAgents, sanitizePhoneNumber } from '../utils';
-import { useGlobalPopup } from './GlobalPopup';
-
-// Dropdown component for metadata fields (clean single outline)
-function AddLeadMetaSelect({ label, field, value, onChange, options = [] }) {
-    return (
-        <div className="space-y-1">
-            <label className="text-[10px] text-stone-500 uppercase tracking-wide font-bold block">{label}</label>
-            <select
-                value={value || ''}
-                onChange={e => onChange(field, e.target.value)}
-                className="w-full bg-white border border-stone-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-stone-800 focus:outline-none focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all"
-            >
-                <option value="">Select {label}...</option>
-                {options.map(o => <option key={o} value={o}>{o}</option>)}
-            </select>
-        </div>
-    );
-}
-
-// Autocomplete component for Channel Partner Name selector (clean single outline)
-function ChannelPartnerAutocomplete({ label, value, onChange, suggestions = [], required = false, isAdmin = false }) {
-    const [inputValue, setInputValue] = useState(value || '');
-    const [showSuggestions, setShowSuggestions] = useState(false);
-    const containerRef = useRef(null);
-
-    useEffect(() => {
-        setInputValue(value || '');
-    }, [value]);
-
-    useEffect(() => {
-        const handleClickOutside = (e) => {
-            if (containerRef.current && !containerRef.current.contains(e.target)) {
-                setShowSuggestions(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-
-    const filtered = inputValue.trim()
-        ? suggestions.filter(s => s.toLowerCase().includes(inputValue.trim().toLowerCase()))
-        : suggestions;
-
-    const handleSelect = (val) => {
-        setInputValue(val);
-        onChange(val);
-        setShowSuggestions(false);
-    };
-
-    const handleInputChange = (e) => {
-        const val = e.target.value;
-        setInputValue(val);
-        onChange(val);
-        setShowSuggestions(true);
-    };
-
-    return (
-        <div className="space-y-1 relative" ref={containerRef}>
-            <label className="text-[10px] text-stone-500 uppercase tracking-wide font-bold block">
-                {label} {required && <span className="text-red-500 font-bold">*</span>}
-            </label>
-            <div className="relative">
-                <input name="channel_partner" id="channel_partner"
-                    type="text"
-                    value={inputValue}
-                    onChange={handleInputChange}
-                    onFocus={() => setShowSuggestions(true)}
-                    className="w-full bg-white border border-stone-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-stone-800 focus:outline-none focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all"
-                    placeholder={`Enter ${label}...`}
-                />
-                {showSuggestions && filtered.length > 0 && (
-                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-stone-100 rounded-xl shadow-xl z-50 max-h-40 overflow-y-auto py-1">
-                        {filtered.map(s => (
-                            <button
-                                key={s}
-                                type="button"
-                                onClick={() => handleSelect(s)}
-                                className="w-full text-left px-3.5 py-2 text-xs hover:bg-stone-50 text-stone-700 font-medium transition-colors"
-                            >
-                                {s}
-                            </button>
-                        ))}
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-}
-
-// Interactive checklist row with file upload / replace / delete / view
-function AddLeadChecklistItem({ label, field, checked, onToggle, pendingFile, onFileAttach, onFileRemove, onPreview }) {
-    const fileInputRef = useRef(null);
-
-    // Unchecked by default; checked only when a file is attached
-    const isUploaded = Boolean(pendingFile);
-
-    const handleFileChange = (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        onFileAttach(field, file);
-        if (onToggle) onToggle(field, true);
-        e.target.value = '';
-    };
-
-    const handleRemove = () => {
-        onFileRemove(field);
-        if (onToggle) onToggle(field, false);
-    };
-
-    return (
-        <div className="py-2.5 border-b border-stone-100 last:border-0 space-y-1.5">
-            <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2.5">
-                    {/* Non-editable check indicator box driven solely by attached file */}
-                    <div 
-                        className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 transition-all ${
-                            isUploaded 
-                                ? 'bg-emerald-500 border-emerald-500 text-white' 
-                                : 'bg-stone-100 border-stone-300 text-transparent'
-                        }`}
-                        title={isUploaded ? 'File Attached' : 'Attach file to verify'}
-                    >
-                        {isUploaded && (
-                            <svg className="w-2.5 h-2.5 stroke-[3] stroke-current" fill="none" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                            </svg>
-                        )}
-                    </div>
-                    <span className={`text-xs select-none ${isUploaded ? 'font-bold text-stone-900' : 'font-medium text-stone-600'}`}>
-                        {label}
-                    </span>
-                    {isUploaded ? (
-                        <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
-                            Attached
-                        </span>
-                    ) : (
-                        <span className="text-[9px] font-bold text-stone-400 bg-stone-100 px-1.5 py-0.2 rounded">
-                            Not Attached
-                        </span>
-                    )}
-                </div>
-
-                <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*,.pdf"
-                    onChange={handleFileChange}
-                    className="hidden"
-                />
-
-                {!pendingFile ? (
-                    <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="flex items-center gap-1.5 text-[10px] font-bold text-stone-500 hover:text-amber-600 px-2.5 py-1 rounded-lg border border-dashed border-stone-200 hover:border-amber-300 hover:bg-amber-50/50 transition-all cursor-pointer"
-                    >
-                        <Paperclip size={11} /> Attach File / Photo
-                    </button>
-                ) : null}
-            </div>
-
-            {pendingFile && (
-                <div className="flex items-center justify-between gap-1.5 bg-amber-50/80 border border-amber-200/80 rounded-xl px-2.5 py-1.5 ml-6">
-                    <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                        <Paperclip size={11} className="text-amber-600 flex-shrink-0" />
-                        <span className="text-[10px] text-amber-900 font-semibold truncate">
-                            {pendingFile.name}
-                        </span>
-                    </div>
-                    <div className="flex items-center gap-1 ml-1 flex-shrink-0">
-                        <button
-                            type="button"
-                            onClick={() => onPreview(pendingFile)}
-                            className="text-[9px] font-bold text-amber-700 hover:text-amber-900 px-1.5 py-0.5 rounded hover:bg-amber-100 transition-colors flex items-center gap-0.5 cursor-pointer"
-                            title="View preview & download"
-                        >
-                            <Eye size={10} /> View
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => fileInputRef.current?.click()}
-                            className="text-[9px] font-bold text-blue-600 hover:text-blue-800 px-1.5 py-0.5 rounded hover:bg-blue-50 transition-colors flex items-center gap-0.5 cursor-pointer"
-                            title="Change file"
-                        >
-                            <Upload size={10} /> Change
-                        </button>
-                        <button
-                            type="button"
-                            onClick={handleRemove}
-                            className="text-[9px] font-bold text-red-500 hover:text-red-700 px-1.5 py-0.5 rounded hover:bg-red-50 transition-colors flex items-center gap-0.5 cursor-pointer"
-                            title="Unstage this file (nothing has been uploaded yet)"
-                        >
-                            <X size={10} /> Remove
-                        </button>
-                    </div>
-                </div>
-            )}
-        </div>
-    );
-}
-
-export default function AddLeadModal({ isOpen, onClose, onSave, meta = {}, channel_partners = [], user }) {
-    const { showAlert, showConfirm } = useGlobalPopup();
-    const [formData, setFormData] = useState({ ...DEFAULT_LEAD_FORM });
-    const [pendingFiles, setPendingFiles] = useState({}); // { [doc_type]: File }
-    const [previewDoc, setPreviewDoc] = useState(null); // { doc, url }
+export default function AddLeadModal({ isOpen, onClose, onCustomerAdded, currentUser }) {
     const [saving, setSaving] = useState(false);
-    const [validationErrors, setValidationErrors] = useState([]);
-    const [isFormDirty, setIsFormDirty] = useState(false);
+    const [error, setError] = useState(null);
 
-    const isAgent = user?.userType === 'agent';
-    // Anyone working in the Agent Portal is the sub channel partner for the
-    // leads they add, so the field is theirs and locked - not a dropdown.
-    const isAgent2 = user?.userType === 'agent2';
-    const isPortalAgent = isAgent || isAgent2;
-    const isChannelPartnerOffice = user?.userType === 'channel_partner_office'
-       
-        || user?.userType === 'office2';
-    const partnerName = (user?.channel_partner || user?.name || '').trim();
-
-    const [subAgentOptions, setSubAgentOptions] = useState([]);
-
-    useEffect(() => {
-        const branch = (isAgent || isChannelPartnerOffice) ? partnerName : (formData.channel_partner || '');
-        if (!branch) { setSubAgentOptions([]); return; }
-        let cancelled = false;
-        fetchAgent2SubAgents(branch).then(names => { if (!cancelled) setSubAgentOptions(names); });
-        return () => { cancelled = true; };
-    }, [isAgent, isChannelPartnerOffice, partnerName, formData.channel_partner]);
-
-    useEffect(() => {
-        if (isOpen) {
-            const defaults = { ...DEFAULT_LEAD_FORM };
-            if (isAgent2) {
-                defaults.channel_partner = user?.channel_partner || partnerName || '';
-                defaults.sub_channel_partner = user?.name || '';
-            } else if (isAgent) {
-                defaults.channel_partner = partnerName || '';
-                defaults.sub_channel_partner = user?.name || '';
-            } else if (isChannelPartnerOffice) {
-                defaults.channel_partner = partnerName || '';
-            }
-            setFormData(defaults);
-            setPendingFiles({});
-            setSaving(false);
-            setIsFormDirty(false);
-        }
-    }, [isOpen, user, isAgent, isAgent2, isChannelPartnerOffice, partnerName]);
-
-    // Esc closes the form through the same guard. Declared before the early
-    // return below so the hook runs on every render.
-    const requestCloseRef = useRef(null);
-    useEffect(() => {
-        if (!isOpen) return undefined;
-        const onKeyDown = (e) => { if (e.key === 'Escape') requestCloseRef.current?.(); };
-        window.addEventListener('keydown', onKeyDown);
-        return () => window.removeEventListener('keydown', onKeyDown);
-    }, [isOpen]);
-
-    // Protect against accidental browser refresh or tab close when new lead form has unsaved edits
-    useEffect(() => {
-        const handleBeforeUnload = (e) => {
-            if (isOpen && isFormDirty) {
-                e.preventDefault();
-                e.returnValue = '';
-                return '';
-            }
-        };
-        window.addEventListener('beforeunload', handleBeforeUnload);
-        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-    }, [isOpen, isFormDirty]);
+    const [form, setForm] = useState({
+        consumer_name: '',
+        consumer_number: '',
+        mobile_no: '',
+        email: '',
+        address: '',
+        circle: 'RAJKOT RURAL CIRCLE',
+        division: 'Rajkot Rural Division',
+        sub_division: 'Pardi Sub Division',
+        discom_name: 'Paschim Gujarat Vij Co. Limited',
+        proposed_capacity_kw: '3.24',
+        panel_brand: 'Waaree Energies Limited',
+        panel_wattage_wp: '540',
+        panel_quantity: '6',
+        inverter_brand: 'POLYCAB',
+        inverter_capacity_kw: '3.6',
+        dealer: 'Teraiya',
+        ref_agent: '',
+        payment_mode_raw: 'LOAN',
+        actual_payment: '',
+        meter_charge: '2950',
+        charge: '800',
+        portal_status: 'Upload Agreement (Pending)',
+        status: 'Upload Agreement (Pending)',
+        is_interested: true,
+        is_reverified: false,
+        remarks: ''
+    });
 
     if (!isOpen) return null;
 
     const handleChange = (field, value) => {
-        setIsFormDirty(true);
-        setValidationErrors([]);
-        let processedValue = value;
-        // Consumer No is digits only. It used to be type="number", which
-        // silently accepts "e" (exponent) and then reports the value as an
-        // empty string — so typing a letter produced "must be at least 3
-        // characters" instead of anything about letters.
-        if (field === 'consumer_no') {
-            processedValue = String(value).replace(/[^0-9]/g, '');
-        }
-        if (field === 'phone_number') {
-            processedValue = sanitizePhoneNumber(value);
-        }
-        setFormData(prev => {
-            const next = { ...prev, [field]: processedValue };
-            return next;
-        });
+        setForm(prev => ({
+            ...prev,
+            [field]: value,
+            ...(field === 'portal_status' ? { status: value } : {})
+        }));
     };
 
-    // Module Wp x No of Modules, on demand only. This used to run on every
-    // keystroke in either field, silently overwriting a value typed by hand.
-    const autoCalcCapacity = () => {
-        const wp = parseFloat(String(formData.module_wp || '').replace(/,/g, ''));
-        const count = parseFloat(String(formData.no_of_modules || '').replace(/,/g, ''));
-        if (isNaN(wp) || isNaN(count) || wp <= 0 || count <= 0) {
-            showAlert('Enter Module Wp and No of Modules first.', { title: 'Cannot calculate', type: 'warning' });
+    const handleCapacityChange = (kw) => {
+        const capacity = parseFloat(kw) || 0;
+        let panels = 6;
+        let watts = 540;
+        if (capacity > 4) {
+            panels = 8;
+        } else if (capacity > 3.5) {
+            panels = 7;
+        }
+        setForm(prev => ({
+            ...prev,
+            proposed_capacity_kw: kw,
+            panel_quantity: panels.toString(),
+            panel_wattage_wp: watts.toString()
+        }));
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setSaving(true);
+        setError(null);
+
+        if (!form.consumer_name.trim()) {
+            setError('Consumer Name is required.');
+            setSaving(false);
             return;
         }
-        // Wp x modules gives WATTS; the field is kWp, so divide by 1000.
-        // This used to be Math.round(wp * count) - 540Wp x 6 wrote "3,240" into
-        // a kWp field, when the answer is 3.24. Every imported record is in kWp
-        // (4,536 of 4,646 carry decimals), so the auto-calc was the odd one out
-        // and any lead created through this button had a capacity 1000x too big.
-        //
-        // Two decimals, trailing zeros trimmed: 3.24 stays 3.24, 3.00 becomes 3.
-        const kwp = Math.round((wp * count) / 1000 * 100) / 100;
-        handleChange('system_capacity_kwp', String(kwp));
-    };
 
-    const handleFileAttach = (docType, file) => {
-        setIsFormDirty(true);
-        setPendingFiles(prev => ({ ...prev, [docType]: file }));
-    };
-
-    const handleFileRemove = (docType) => {
-        setIsFormDirty(true);
-        setPendingFiles(prev => {
-            const next = { ...prev };
-            delete next[docType];
-            return next;
-        });
-    };
-
-    const handlePreviewFile = (file) => {
-        const url = URL.createObjectURL(file);
-        setPreviewDoc({
-            doc: {
-                file_name: file.name,
-                file_type: file.type,
-            },
-            url
-        });
-    };
-
-    const handleClosePreview = () => {
-        if (previewDoc?.url) URL.revokeObjectURL(previewDoc.url);
-        setPreviewDoc(null);
-    };
-
-    const handleSave = async (e) => {
-        if (e) e.preventDefault();
-        if (saving) return false; // Prevent double-submission from fast clicking
-        
-        const finalData = {
-            ...formData,
-            channel_partner: isAgent2 ? (user?.channel_partner || partnerName || '') : ((isAgent || isChannelPartnerOffice) ? partnerName : (formData.channel_partner || '').trim()),
-            sub_channel_partner: isPortalAgent ? user?.name : (formData.sub_channel_partner || '').trim() || null
-        };
-
-        // Ensure string fields are strings to pass Zod schema
-        ['customer_name', 'phone_number', 'email_address', 'consumer_no', 'villages', 'channel_partner', 'module_brand', 'module_wp', 'no_of_modules', 'system_capacity_kwp', 'sub_divisions'].forEach(key => {
-            if (finalData[key] !== undefined && finalData[key] !== null) {
-                finalData[key] = String(finalData[key]);
-            }
-        });
-
-        const result = leadSchema.safeParse(finalData);
-        if (!result.success) {
-            setValidationErrors(result.error.issues.map(err => err.message));
-            // Scroll to top
-            const bodyEl = document.querySelector('.modal-body');
-            if (bodyEl) bodyEl.scrollTop = 0;
-            return false;
+        if (!form.consumer_number.trim()) {
+            setError('Consumer Number is required.');
+            setSaving(false);
+            return;
         }
 
-        // Apply validated data
-        const validatedData = result.data;
-
-        // Package attached files as list of { file, doc_type }
-        const filesToUpload = Object.entries(pendingFiles).map(([doc_type, file]) => ({
-            file,
-            doc_type
-        }));
-
-        setSaving(true);
         try {
-            await onSave(validatedData, filesToUpload);
-            setIsFormDirty(false);
+            const cleanConsumerNo = form.consumer_number.replace(/[^0-9A-Za-z]/g, '').toUpperCase();
+
+            const insertData = {
+                consumer_name: form.consumer_name.trim(),
+                consumer_number: cleanConsumerNo,
+                mobile_no: form.mobile_no.trim() || null,
+                email: form.email.trim() || null,
+                address: form.address.trim() || null,
+                circle: form.circle || null,
+                division: form.division || null,
+                sub_division: form.sub_division || null,
+                discom_name: form.discom_name || null,
+                proposed_capacity_kw: parseFloat(form.proposed_capacity_kw) || null,
+                panel_brand: form.panel_brand || null,
+                panel_wattage_wp: parseFloat(form.panel_wattage_wp) || null,
+                panel_quantity: parseInt(form.panel_quantity) || null,
+                inverter_brand: form.inverter_brand || null,
+                inverter_capacity_kw: parseFloat(form.inverter_capacity_kw) || null,
+                dealer: form.dealer.trim() || 'Teraiya',
+                ref_agent: form.ref_agent.trim() || null,
+                payment_mode_raw: form.payment_mode_raw || null,
+                actual_payment: parseFloat(form.actual_payment) || null,
+                meter_charge: parseFloat(form.meter_charge) || null,
+                charge: parseFloat(form.charge) || null,
+                portal_status: form.portal_status,
+                status: form.portal_status,
+                is_interested: form.is_interested,
+                is_reverified: form.is_reverified,
+                remarks: form.remarks.trim() || null,
+                sources: 'MANUAL_ENTRY'
+            };
+
+            const { data, error: insertError } = await supabase
+                .from('admin')
+                .insert([insertData])
+                .select()
+                .single();
+
+            if (insertError) throw insertError;
+
+            if (onCustomerAdded) {
+                onCustomerAdded(data);
+            }
             onClose();
-            return true;
         } catch (err) {
-            console.error('Error in onSave:', err);
-            showAlert('Failed to save lead: ' + (err.message || err), { type: 'error' });
-            return false;
+            console.error('Failed to add lead:', err);
+            setError(err.message || 'Failed to save customer lead.');
         } finally {
             setSaving(false);
         }
     };
 
-    const handleRequestClose = async () => {
-        if (!isFormDirty) {
-            onClose();
-            return;
-        }
-        const shouldDiscard = await showConfirm('This new lead has unsaved changes.', {
-            title: 'Close without saving?',
-            confirmLabel: 'Discard Lead',
-            cancelLabel: 'Keep Editing',
-            type: 'warning'
-        });
-        if (shouldDiscard) onClose();
-    };
-    requestCloseRef.current = handleRequestClose;
-
-    const moduleWpOptions = (meta['module_wp'] && meta['module_wp'].length > 0)
-        ? meta['module_wp']
-        : ['540', '545', '550', '570', '575', '580', '585', '590', '600', '610', '615', '620'];
-
-
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-3 sm:p-4">
-            <div className="bg-white rounded-[28px] shadow-2xl w-full max-w-xl max-h-[92vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
-                {/* Modal Header */}
-                <div className="flex items-center justify-between px-5 py-4 border-b border-stone-100 bg-white sticky top-0 z-10">
-                    <div>
-                        <div className="flex items-center gap-2">
-                            <h2 className="text-base font-black text-stone-900 uppercase tracking-wider flex items-center gap-2">
-                                <Plus size={18} className="text-amber-500" /> Add New Lead
-                            </h2>
-                            <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200/60">
-                                <Calendar size={11} className="text-amber-600 flex-shrink-0" />
-                                <span>{new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })} IST</span>
-                            </span>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-sm overflow-y-auto">
+            <div className="bg-white rounded-2xl shadow-2xl border border-stone-200 w-full max-w-3xl overflow-hidden my-8">
+                {/* Header */}
+                <div className="flex items-center justify-between px-6 py-4 border-b border-stone-200 bg-stone-50">
+                    <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-lg bg-amber-500 text-white flex items-center justify-center shadow-sm">
+                            <Plus className="w-5 h-5" />
                         </div>
-                        <p className="text-[10px] text-stone-400 font-semibold mt-0.5">
-                            Register a new customer lead with complete details and document attachments.
-                        </p>
+                        <div>
+                            <h2 className="text-lg font-bold text-stone-900">Add New Solar Project Lead</h2>
+                            <p className="text-xs text-stone-500">Create a consumer application record in PM Surya Ghar workflow</p>
+                        </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <button 
-                            onClick={handleRequestClose} 
-                            className="p-2 hover:bg-stone-100 text-stone-400 hover:text-stone-700 rounded-xl transition cursor-pointer"
-                        >
-                            <X size={18} />
-                        </button>
-                    </div>
+                    <button onClick={onClose} className="text-stone-400 hover:text-stone-700 p-1.5 rounded-lg hover:bg-stone-200/50 transition-colors">
+                        <X className="w-5 h-5" />
+                    </button>
                 </div>
 
-                {/* Modal Scrollable Body */}
-                <div className="flex-1 overflow-y-auto p-5 space-y-5 modal-body">
-                    {validationErrors.length > 0 && (
-                        <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex flex-col gap-2 animate-in fade-in slide-in-from-top-2 duration-200">
-                            <div className="flex items-center gap-2 text-red-800 font-bold text-xs uppercase tracking-wide">
-                                <AlertTriangle className="w-4 h-4 text-red-500" />
-                                Please fix the following errors
-                            </div>
-                            <ul className="list-disc pl-5 text-xs text-red-750 font-medium space-y-1">
-                                {validationErrors.map((err, idx) => {
-                                    const msg = typeof err === 'string'
-                                        ? err
-                                        : (err?.message || (err?.text ? (err?.label ? `${err.label}: ${err.text}` : err.text) : JSON.stringify(err)));
-                                    return <li key={idx}>{msg}</li>;
-                                })}
-                            </ul>
-                        </div>
-                    )}
-                    {/* Section 1: Customer Info (Strictly Line-by-Line) */}
-                    <section>
-                        <div className="flex items-center gap-2 mb-3 pb-1.5 border-b border-stone-100">
-                            <User size={13} className="text-amber-500" />
-                            <h3 className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">
-                                Customer Info
-                            </h3>
-                        </div>
+                {error && (
+                    <div className="mx-6 mt-4 p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs font-medium text-rose-700">
+                        {error}
+                    </div>
+                )}
 
-                        <div className="space-y-3">
-                            {/* Customer Name */}
-                            <div className="space-y-1">
-                                <label className="text-[10px] text-stone-500 uppercase tracking-wide font-bold block">
-                                    Customer Name <span className="text-red-500 font-bold">*</span>
-                                </label>
+                <form onSubmit={handleSubmit} className="p-6 space-y-6 max-h-[75vh] overflow-y-auto">
+                    {/* Customer Info Section */}
+                    <div>
+                        <h3 className="text-xs font-bold text-amber-700 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                            <User className="w-4 h-4" /> Consumer & Location Details
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs font-semibold text-stone-700 mb-1">Consumer Name *</label>
                                 <input
                                     type="text"
-                                    value={formData.customer_name || ''}
-                                    onChange={e => handleChange('customer_name', e.target.value)}
-                                    className="w-full bg-white border border-stone-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-stone-800 focus:outline-none focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all"
-                                    placeholder="Enter full name"
                                     required
+                                    placeholder="e.g. KARIYA KALPESH GIRISHBHAI"
+                                    value={form.consumer_name}
+                                    onChange={(e) => handleChange('consumer_name', e.target.value)}
+                                    className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 focus:outline-none"
                                 />
                             </div>
 
-                            {/* Phone Number */}
-                            <div className="space-y-1">
-                                <label className="text-[10px] text-stone-500 uppercase tracking-wide font-bold block">
-                                    Phone Number <span className="text-red-500 font-bold">*</span>
-                                </label>
+                            <div>
+                                <label className="block text-xs font-semibold text-stone-700 mb-1">Consumer Number (PGVCL/Discom) *</label>
                                 <input
-                                    type="tel"
-                                    // 16 = "+" plus the E.164 maximum of 15 digits.
-                                    // At 10 a +91 number could not be typed at all.
-                                    maxLength={16}
-                                    value={formData.phone_number || ''}
-                                    onChange={e => handleChange('phone_number', e.target.value)}
-                                    className="w-full bg-white border border-stone-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-stone-800 focus:outline-none focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all"
-                                    placeholder="9876543210 or +919876543210"
+                                    type="text"
                                     required
+                                    placeholder="e.g. 30702188131"
+                                    value={form.consumer_number}
+                                    onChange={(e) => handleChange('consumer_number', e.target.value)}
+                                    className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-amber-400 focus:outline-none"
                                 />
                             </div>
 
-                            {/* Email Address */}
-                            <div className="space-y-1">
-                                <label className="text-[10px] text-stone-500 uppercase tracking-wide font-bold block">
-                                    Email Address <span className="text-red-500 font-bold">*</span>
-                                </label>
+                            <div>
+                                <label className="block text-xs font-semibold text-stone-700 mb-1">Mobile Number</label>
+                                <input
+                                    type="text"
+                                    placeholder="e.g. 7046553913"
+                                    value={form.mobile_no}
+                                    onChange={(e) => handleChange('mobile_no', e.target.value)}
+                                    className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 focus:outline-none"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-semibold text-stone-700 mb-1">Email Address</label>
                                 <input
                                     type="email"
-                                    value={formData.email_address || ''}
-                                    onChange={e => handleChange('email_address', e.target.value)}
-                                    className="w-full bg-white border border-stone-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-stone-800 focus:outline-none focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all"
-                                    placeholder="name@example.com"
-                                    required
+                                    placeholder="e.g. consumer@example.com"
+                                    value={form.email}
+                                    onChange={(e) => handleChange('email', e.target.value)}
+                                    className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 focus:outline-none"
                                 />
                             </div>
 
-                            {/* Consumer No */}
-                            <div className="space-y-1">
-                                <label className="text-[10px] text-stone-500 uppercase tracking-wide font-bold block">
-                                    Consumer No <span className="text-red-500 font-bold">*</span>
-                                </label>
+                            <div className="md:col-span-2">
+                                <label className="block text-xs font-semibold text-stone-700 mb-1">Installation Address</label>
                                 <input
                                     type="text"
-                                    inputMode="numeric"
-                                    value={formData.consumer_no || ''}
-                                    onChange={e => handleChange('consumer_no', e.target.value)}
-                                    className="w-full bg-white border border-stone-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-stone-800 focus:outline-none focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all"
-                                    placeholder="Consumer number"
-                                    required
+                                    placeholder="Full address or village"
+                                    value={form.address}
+                                    onChange={(e) => handleChange('address', e.target.value)}
+                                    className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 focus:outline-none"
                                 />
                             </div>
 
-                            {/* Villages */}
-                            <div className="space-y-1">
-                                <label className="text-[10px] text-stone-500 uppercase tracking-wide font-bold block">
-                                    Villages / Address <span className="text-red-500 font-bold">*</span>
-                                </label>
+                            <div>
+                                <label className="block text-xs font-semibold text-stone-700 mb-1">Discom Name</label>
+                                <select
+                                    value={form.discom_name}
+                                    onChange={(e) => handleChange('discom_name', e.target.value)}
+                                    className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-amber-400 focus:outline-none"
+                                >
+                                    <option value="Paschim Gujarat Vij Co. Limited">Paschim Gujarat Vij Co. Limited (PGVCL)</option>
+                                    <option value="Uttar Gujarat Vij Company Limited">Uttar Gujarat Vij Company Limited (UGVCL)</option>
+                                    <option value="Madhya Gujarat VIJ Company Ltd.">Madhya Gujarat VIJ Company Ltd. (MGVCL)</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-semibold text-stone-700 mb-1">Sub Division</label>
                                 <input
                                     type="text"
-                                    value={formData.villages || ''}
-                                    onChange={e => handleChange('villages', e.target.value)}
-                                    className="w-full bg-white border border-stone-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-stone-800 focus:outline-none focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all"
-                                    placeholder="Village or address"
-                                    required
+                                    placeholder="e.g. Madhapar Urban Sub Division"
+                                    value={form.sub_division}
+                                    onChange={(e) => handleChange('sub_division', e.target.value)}
+                                    className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 focus:outline-none"
                                 />
                             </div>
+                        </div>
+                    </div>
 
-                            {/* Sub Division */}
-                            <div className="space-y-1">
-                                <label className="text-[10px] text-stone-500 uppercase tracking-wide font-bold block">
-                                    Sub Division <span className="text-red-500 font-bold">*</span>
-                                </label>
-                                <input
-                                    type="text"
-                                    value={formData.sub_divisions || ''}
-                                    onChange={e => handleChange('sub_divisions', e.target.value)}
-                                    className="w-full bg-white border border-stone-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-stone-800 focus:outline-none focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all"
-                                    placeholder="Sub division"
-                                    required
-                                />
-                            </div>
-
-                            {/* Agents and Channel Partner Office users are always assigned to
-                                themselves. agent2 (a Dealer under a CPO) does not see the field
-                                at all - the value is still enforced on submit from
-                                user.channel_partner, it is just not shown to them. */}
-                            {isAgent2 ? null : (isAgent || isChannelPartnerOffice) ? (
-                                <div className="space-y-1">
-                                    <label className="text-[10px] text-stone-500 uppercase tracking-wide font-bold block">
-                                        Channel Partner Name <span className="text-red-500 font-bold">*</span>
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={partnerName}
-                                        disabled
-                                        className="w-full bg-stone-100 border border-stone-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-stone-700 cursor-not-allowed"
-                                    /> 
-                                </div>
-                            ) : (
-                                <ChannelPartnerAutocomplete
-                                    label="Channel Partner Name"
-                                    value={formData.channel_partner}
-                                    onChange={val => handleChange('channel_partner', val)}
-                                    suggestions={channel_partners}
-                                    required={true}
-                                    isAdmin={user?.userType === 'admin'}
-                                />
-                            )}
-
-                            {/* A Channel Partner files leads under their own name. CPO and
-                                Manager accounts get a dropdown scoped to their CPO. */}
-                            {isPortalAgent ? (
-                                <div className="space-y-1">
-                                    <label className="text-[10px] text-stone-500 uppercase tracking-wide font-bold block">
-                                        Dealer Name <span className="text-red-500 font-bold">*</span>
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={user?.name || ''}
-                                        disabled
-                                        readOnly
-                                        className="w-full bg-stone-100 border border-stone-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-stone-700 cursor-not-allowed"
-                                    />
-                                    <p className="text-[10px] text-stone-400 italic">Set automatically to your account.</p>
-                                </div>
-                            ) : (
-                                <div className="space-y-1">
-                                    <label className="text-[10px] text-stone-500 uppercase tracking-wide font-bold block">
-                                        Dealer Name <span className="normal-case text-stone-400 font-medium">(optional)</span>
-                                    </label>
-                                    <select
-                                        value={formData.sub_channel_partner || ''}
-                                        onChange={e => handleChange('sub_channel_partner', e.target.value)}
-                                        className="w-full bg-white border border-stone-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-stone-800 focus:outline-none focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all"
-                                    >
-                                        <option value="">None</option>
-                                        {formData.sub_channel_partner && !subAgentOptions.includes(formData.sub_channel_partner) && (
-                                            <option value={formData.sub_channel_partner}>{formData.sub_channel_partner}</option>
-                                        )}
-                                        {subAgentOptions.map(name => <option key={name} value={name}>{name}</option>)}
-                                    </select>
-                                    {subAgentOptions.length === 0 && (
-                                        <p className="text-[10px] text-stone-400 italic">No Channel Partners are registered under this CPO yet - add them in User Management first.</p>
-                                    )}
-                                </div>
-                            )}
-
-                            {/* MODULE BRAND */}
-                            <div className="space-y-1">
-                                 <label className="text-[10px] text-stone-500 uppercase tracking-wide font-bold block">
-                                     MODULE BRAND <span className="text-red-500 font-bold">*</span>
-                                 </label>
-                                 <select
-                                     value={formData.module_brand || ''}
-                                     onChange={e => handleChange('module_brand', e.target.value)}
-                                     className="w-full bg-white border border-stone-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-stone-800 focus:outline-none focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all"
-                                     required
-                                 >
-                                     <option value="">Select MODULE BRAND...</option>
-                                     {(meta['module_brand'] || []).map(o => <option key={o} value={o}>{o}</option>)}
-                                 </select>
-                            </div>
-
-                            {/* MODULE WP */}
-                            <div className="space-y-1">
-                                 <label className="text-[10px] text-stone-500 uppercase tracking-wide font-bold block">
-                                     MODULE WP <span className="text-red-500 font-bold">*</span>
-                                 </label>
-                                 <select
-                                     value={formData.module_wp || ''}
-                                     onChange={e => handleChange('module_wp', e.target.value)}
-                                     className="w-full bg-white border border-stone-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-stone-800 focus:outline-none focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all"
-                                     required
-                                 >
-                                     <option value="">Select MODULE WP...</option>
-                                     {moduleWpOptions.map(o => <option key={o} value={o}>{o}</option>)}
-                                 </select>
-                            </div>
-
-                            {/* No of Modules */}
-                            <div className="space-y-1">
-                                <label className="text-[10px] text-stone-500 uppercase tracking-wide font-bold block">
-                                    No of Modules <span className="text-red-500 font-bold">*</span>
-                                </label>
+                    {/* Technical BOM Specs */}
+                    <div className="pt-4 border-t border-stone-200">
+                        <h3 className="text-xs font-bold text-amber-700 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                            <Zap className="w-4 h-4" /> Technical & BOM Specifications
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label className="block text-xs font-semibold text-stone-700 mb-1">Proposed Capacity (kWp)</label>
                                 <input
                                     type="number"
-                                    min="1"
-                                    value={formData.no_of_modules || ''}
-                                    onChange={e => handleChange('no_of_modules', e.target.value)}
-                                    className="w-full bg-white border border-stone-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-stone-800 focus:outline-none focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all"
-                                    placeholder="e.g. 10"
-                                    required
+                                    step="0.01"
+                                    value={form.proposed_capacity_kw}
+                                    onChange={(e) => handleCapacityChange(e.target.value)}
+                                    className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm font-bold text-amber-600 focus:ring-2 focus:ring-amber-400 focus:outline-none"
                                 />
                             </div>
 
-                            {/* System Capacity */}
-                            <div className="space-y-1">
-                                <label className="text-[10px] text-stone-500 uppercase tracking-wide font-bold block">
-                                    System Capacity <span className="text-red-500 font-bold">*</span>
-                                </label>
-                                <span className="relative block">
-                                    <input
-                                        type="text"
-                                        value={formData.system_capacity_kwp || ''}
-                                        onChange={e => handleChange('system_capacity_kwp', e.target.value)}
-                                        className="w-full bg-white border border-stone-200 rounded-xl px-3.5 py-2.5 pr-16 text-xs font-semibold text-stone-800 focus:outline-none focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all"
-                                        placeholder="e.g. 32,940"
-                                        required
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={autoCalcCapacity}
-                                        title="Calculate from Module Wp x No of Modules"
-                                        className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-lg bg-amber-500 hover:bg-amber-600 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white transition cursor-pointer"
-                                    >
-                                        Auto
-                                    </button>
-                                </span>
-                            </div>
-                        </div>
-                    </section>
-
-                    {/* Section 2: Document Checklist (Strictly Line-by-Line) */}
-                    <section>
-                        <div className="flex items-center justify-between mb-3 pb-1.5 border-b border-stone-100">
-                            <div className="flex items-center gap-2">
-                                <ClipboardList size={13} className="text-amber-500" />
-                                <h3 className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">
-                                    Document Checklist
-                                </h3>
-                            </div>
-                        </div>
-
-                        <div className="space-y-3">
-                            {/* Payment Type Selection at the top */}
-                            <div className="space-y-1">
-                                <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wider block">
-                                    Payment Type Selection <span className="text-red-500 font-bold">*</span>
-                                </label>
-                                {/* The saved value is title-cased by the Zod schema ('Cash'
-                                    / 'Loan') while these options come from metadata, which
-                                    is uppercase. A <select> whose value matches no <option>
-                                    renders BLANK - which is why a chosen Payment Type looked
-                                    like it had disappeared. Match case-insensitively, and
-                                    keep any unrecognised stored value visible. */}
-                                {(() => {
-                                    const ptOptions = meta['payment_type'] || ['CASH', 'LOAN'];
-                                    const stored = String(formData.payment_type || '').trim();
-                                    const matched = ptOptions.find(o => String(o).trim().toLowerCase() === stored.toLowerCase());
-                                    return (
+                            <div>
+                                <label className="block text-xs font-semibold text-stone-700 mb-1">Panel Brand OEM</label>
                                 <select
-                                    value={matched ?? stored}
-                                    onChange={(e) => {
-                                        const val = e.target.value;
-                                        handleChange('payment_type', val);
-                                    }}
-                                    className="w-full bg-white border border-stone-200 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500 focus:border-amber-500 font-semibold text-stone-800 transition-all"
-                                    required
+                                    value={form.panel_brand}
+                                    onChange={(e) => handleChange('panel_brand', e.target.value)}
+                                    className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-amber-400 focus:outline-none"
                                 >
-                                    <option value="">Select Payment Type...</option>
-                                    {stored && !matched && (
-                                        <option value={stored}>{stored}</option>
-                                    )}
-                                    {ptOptions.map((opt) => (
-                                        <option key={opt} value={opt}>{opt}</option>
-                                    ))}
+                                    <option value="Waaree Energies Limited">Waaree Energies Limited</option>
+                                    <option value="Mundra Solar Energy Limited">Mundra Solar Energy Limited (Adani)</option>
+                                    <option value="Renewsys">Renewsys Solar</option>
+                                    <option value="Tata Power Renewable Energy Limited">Tata Power Solar</option>
+                                    <option value="Goldi Solar">Goldi Solar</option>
                                 </select>
-                                    );
-                                })()}
                             </div>
 
-                            {/* Checklist items only visible if payment_type is selected */}
-                            {formData.payment_type ? (
-                                <div className="space-y-1 divide-y divide-stone-100">
-                                    {formData.payment_type?.trim().toLowerCase() !== 'cash' && (
-                                        <>
-                                            <AddLeadChecklistItem
-                                                label="Aadhar Card Front"
-                                                field="adhaar_card_front"
-                                                checked={formData.adhaar_card_front}
-                                                onToggle={handleChange}
-                                                pendingFile={pendingFiles['adhaar_card_front']}
-                                                onFileAttach={handleFileAttach}
-                                                onFileRemove={handleFileRemove}
-                                                onPreview={handlePreviewFile}
-                                            />
-                                            <AddLeadChecklistItem
-                                                label="Aadhar Card Back"
-                                                field="adhaar_card_back"
-                                                checked={formData.adhaar_card_back}
-                                                onToggle={handleChange}
-                                                pendingFile={pendingFiles['adhaar_card_back']}
-                                                onFileAttach={handleFileAttach}
-                                                onFileRemove={handleFileRemove}
-                                                onPreview={handlePreviewFile}
-                                            />
-                                            <AddLeadChecklistItem
-                                                label="PAN Card"
-                                                field="pan_card"
-                                                checked={formData.pan_card}
-                                                onToggle={handleChange}
-                                                pendingFile={pendingFiles['pan_card']}
-                                                onFileAttach={handleFileAttach}
-                                                onFileRemove={handleFileRemove}
-                                                onPreview={handlePreviewFile}
-                                            />
-                                            <AddLeadChecklistItem
-                                                label="Index 2"
-                                                field="index_2"
-                                                checked={formData.index_2}
-                                                onToggle={handleChange}
-                                                pendingFile={pendingFiles['index_2']}
-                                                onFileAttach={handleFileAttach}
-                                                onFileRemove={handleFileRemove}
-                                                onPreview={handlePreviewFile}
-                                            />
-                                            <AddLeadChecklistItem
-                                                label="House Geo Tag Photo"
-                                                field="house_geo_tag_photo"
-                                                checked={formData.house_geo_tag_photo}
-                                                onToggle={handleChange}
-                                                pendingFile={pendingFiles['house_geo_tag_photo']}
-                                                onFileAttach={handleFileAttach}
-                                                onFileRemove={handleFileRemove}
-                                                onPreview={handlePreviewFile}
-                                            />
-                                        </>
-                                    )}
-
-                                    <AddLeadChecklistItem
-                                        label="Light Bill"
-                                        field="light_bill"
-                                        checked={formData.light_bill}
-                                        onToggle={handleChange}
-                                        pendingFile={pendingFiles['light_bill']}
-                                        onFileAttach={handleFileAttach}
-                                        onFileRemove={handleFileRemove}
-                                        onPreview={handlePreviewFile}
+                            <div>
+                                <label className="block text-xs font-semibold text-stone-700 mb-1">No. of Modules & Wattage</label>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <input
+                                        type="number"
+                                        placeholder="Qty"
+                                        value={form.panel_quantity}
+                                        onChange={(e) => handleChange('panel_quantity', e.target.value)}
+                                        className="px-2 py-2 border border-stone-300 rounded-lg text-sm text-center font-bold"
                                     />
-
-                                    <AddLeadChecklistItem
-                                        label="Bank Details"
-                                        field="bank_details"
-                                        checked={formData.bank_details}
-                                        onToggle={handleChange}
-                                        pendingFile={pendingFiles['bank_details']}
-                                        onFileAttach={handleFileAttach}
-                                        onFileRemove={handleFileRemove}
-                                        onPreview={handlePreviewFile}
-                                    />
-
-                                    <AddLeadChecklistItem
-                                        label="Extra Documents"
-                                        field="extra_docs"
-                                        checked={formData.extra_docs}
-                                        onToggle={handleChange}
-                                        pendingFile={pendingFiles['extra_docs']}
-                                        onFileAttach={handleFileAttach}
-                                        onFileRemove={handleFileRemove}
-                                        onPreview={handlePreviewFile}
+                                    <input
+                                        type="number"
+                                        placeholder="Watt"
+                                        value={form.panel_wattage_wp}
+                                        onChange={(e) => handleChange('panel_wattage_wp', e.target.value)}
+                                        className="px-2 py-2 border border-stone-300 rounded-lg text-sm text-center"
                                     />
                                 </div>
-                            ) : (
-                                <p className="text-xs text-stone-400 italic py-2">
-                                    Please select a Payment Type above to display the Document Checklist.
-                                </p>
-                            )}
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-semibold text-stone-700 mb-1">Inverter Brand OEM</label>
+                                <select
+                                    value={form.inverter_brand}
+                                    onChange={(e) => handleChange('inverter_brand', e.target.value)}
+                                    className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-amber-400 focus:outline-none"
+                                >
+                                    <option value="POLYCAB">POLYCAB</option>
+                                    <option value="SOLARYAAN">SOLARYAAN</option>
+                                    <option value="GROWATT">GROWATT</option>
+                                    <option value="HAVELLS">HAVELLS</option>
+                                    <option value="SOLAX">SOLAX</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-semibold text-stone-700 mb-1">Inverter Capacity (kW)</label>
+                                <input
+                                    type="number"
+                                    step="0.1"
+                                    value={form.inverter_capacity_kw}
+                                    onChange={(e) => handleChange('inverter_capacity_kw', e.target.value)}
+                                    className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 focus:outline-none"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-semibold text-stone-700 mb-1">Initial Portal Stage</label>
+                                <select
+                                    value={form.portal_status}
+                                    onChange={(e) => handleChange('portal_status', e.target.value)}
+                                    className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm bg-white font-medium text-stone-800 focus:ring-2 focus:ring-amber-400 focus:outline-none"
+                                >
+                                    <option value="Upload Agreement (Pending)">Upload Agreement (Pending)</option>
+                                    <option value="Installation (Pending)">Installation (Pending)</option>
+                                    <option value="Inspection (Pending)">Inspection (Pending)</option>
+                                    <option value="Subsidy Request (Pending)">Subsidy Request (Pending)</option>
+                                    <option value="Subsidy Disbursal (Disbursed)">Subsidy Disbursal (Completed)</option>
+                                    <option value="Vender Selection">Vender Selection</option>
+                                </select>
+                            </div>
                         </div>
-                    </section>
-                </div>
+                    </div>
 
-                {/* Modal Footer */}
-                <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-stone-100 bg-white sticky bottom-0 z-10">
-                    <button 
-                        type="button"
-                        onClick={handleRequestClose}
-                        disabled={saving}
-                        className="px-4 py-2.5 text-xs font-bold text-stone-500 hover:text-stone-800 bg-stone-100 hover:bg-stone-200 rounded-xl transition cursor-pointer disabled:opacity-50"
-                    >
-                        Cancel
-                    </button>
-                    <button 
-                        type="button"
-                        onClick={handleSave}
-                        disabled={saving}
-                        className="px-5 py-2.5 text-xs font-bold text-white bg-amber-500 hover:bg-amber-600 rounded-xl transition shadow-md shadow-amber-500/10 cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50"
-                    >
-                        {saving ? (
-                            <>
-                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                Saving Lead & Uploading Files...
-                            </>
-                        ) : (
-                            <>
-                                <Plus className="w-3.5 h-3.5" />
-                                Add Lead
-                            </>
-                        )}
-                    </button>
-                </div>
+                    {/* Dealer & Commercials */}
+                    <div className="pt-4 border-t border-stone-200">
+                        <h3 className="text-xs font-bold text-amber-700 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                            <Building2 className="w-4 h-4" /> Dealer & Commercial Details
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label className="block text-xs font-semibold text-stone-700 mb-1">Dealer</label>
+                                <input
+                                    type="text"
+                                    value={form.dealer}
+                                    onChange={(e) => handleChange('dealer', e.target.value)}
+                                    className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm font-bold text-stone-800 focus:ring-2 focus:ring-amber-400 focus:outline-none"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-semibold text-stone-700 mb-1">Reference / Agent (REF)</label>
+                                <input
+                                    type="text"
+                                    placeholder="e.g. YASH / PARESH / SHYAMBHAI"
+                                    value={form.ref_agent}
+                                    onChange={(e) => handleChange('ref_agent', e.target.value)}
+                                    className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 focus:outline-none"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-semibold text-stone-700 mb-1">Payment Mode</label>
+                                <select
+                                    value={form.payment_mode_raw}
+                                    onChange={(e) => handleChange('payment_mode_raw', e.target.value)}
+                                    className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-amber-400 focus:outline-none"
+                                >
+                                    <option value="LOAN">Bank Loan (JanSamarth / Solfin)</option>
+                                    <option value="CASH">Direct Cash</option>
+                                    <option value="BANK TRANSFER">Bank Online Transfer</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-semibold text-stone-700 mb-1">Actual Payment Amount (₹)</label>
+                                <input
+                                    type="number"
+                                    placeholder="e.g. 189000"
+                                    value={form.actual_payment}
+                                    onChange={(e) => handleChange('actual_payment', e.target.value)}
+                                    className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 focus:outline-none"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-semibold text-stone-700 mb-1">Meter Charge (₹)</label>
+                                <input
+                                    type="number"
+                                    value={form.meter_charge}
+                                    onChange={(e) => handleChange('meter_charge', e.target.value)}
+                                    className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 focus:outline-none"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-semibold text-stone-700 mb-1">Notes / Remarks</label>
+                                <input
+                                    type="text"
+                                    placeholder="Optional notes"
+                                    value={form.remarks}
+                                    onChange={(e) => handleChange('remarks', e.target.value)}
+                                    className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 focus:outline-none"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Submit Bar */}
+                    <div className="pt-4 border-t border-stone-200 flex items-center justify-end gap-3">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="px-4 py-2 text-stone-600 hover:text-stone-800 text-sm font-medium transition-colors"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={saving}
+                            className="flex items-center gap-2 px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold rounded-xl shadow-sm hover:shadow transition-all disabled:opacity-50"
+                        >
+                            <Save className="w-4 h-4" />
+                            {saving ? 'Creating Lead...' : 'Create Lead'}
+                        </button>
+                    </div>
+                </form>
             </div>
-
-            {/* File Preview Modal */}
-            {previewDoc && (
-                <FilePreviewModal
-                    file={previewDoc.doc}
-                    fileUrl={previewDoc.url}
-                    onClose={handleClosePreview}
-                    onDownload={() => {
-                        const a = document.createElement('a');
-                        a.href = previewDoc.url;
-                        a.download = previewDoc.doc.file_name;
-                        a.target = '_blank';
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                    }}
-                />
-            )}
         </div>
     );
 }

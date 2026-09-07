@@ -53,7 +53,8 @@ export default function HistoryTab({
                 </div>
             </section>
 
-            <section>
+            {/* Detailed System History - hidden until activity_log table is added in Supabase */}
+            {/* <section>
                 <h3 className="text-[9px] font-bold text-stone-400 uppercase tracking-widest mb-6">Detailed System History</h3>
                 <div className="space-y-4">
                     {activityLogs.length > 0 ? activityLogs.map((log, i) => (
@@ -78,7 +79,7 @@ export default function HistoryTab({
                         </div>
                     )) : <p className="text-[8px] text-stone-400 italic">No timeline entries found.</p>}
                 </div>
-            </section>
+            </section> */}
         </div>
     );
 }

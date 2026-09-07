@@ -37,17 +37,22 @@ export default function DashboardView({ metrics, loading }) {
         completedCount = 0,
         liveProjects = 0,
         loanCount = 0,
+        bankCount = 0,
         cashCount = 0,
+        pendingPaymentCount = 0,
         stageCounts = {}
     } = metrics || {};
 
-    // Loan vs Cash (memoized)
-    const { loanPerc, cashPerc } = useMemo(() => {
-        const totalCategorized = loanCount + cashCount;
-        const loanPerc = totalCategorized > 0 ? (loanCount / totalCategorized) * 100 : 0;
-        const cashPerc = totalCategorized > 0 ? (cashCount / totalCategorized) * 100 : 0;
-        return { loanPerc, cashPerc };
-    }, [loanCount, cashCount]);
+    // Payment Modes Percentage Breakdown
+    const { loanPerc, bankPerc, cashPerc, pendingPerc } = useMemo(() => {
+        if (!totalProjects) return { loanPerc: 0, bankPerc: 0, cashPerc: 0, pendingPerc: 0 };
+        return {
+            loanPerc: (loanCount / totalProjects) * 100,
+            bankPerc: (bankCount / totalProjects) * 100,
+            cashPerc: (cashCount / totalProjects) * 100,
+            pendingPerc: (pendingPaymentCount / totalProjects) * 100,
+        };
+    }, [totalProjects, loanCount, bankCount, cashCount, pendingPaymentCount]);
 
     if (!metrics) return (
         <div className="p-20 text-center text-stone-400 font-medium italic animate-pulse">
@@ -64,35 +69,81 @@ export default function DashboardView({ metrics, loading }) {
                 <MetricBox label="Completed"      value={completedCount} icon={CheckCircle2} color="emerald" sub="Fully commissioned" />
             </div>
 
-            {/* Financial Analytics */}
+            {/* Financial / Payment Mode Analytics */}
             <div className="bg-white rounded-[32px] p-8 border border-stone-100 shadow-sm">
-                <h3 className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-6">Payment Breakdown</h3>
-                <div className="flex justify-between items-end mb-2">
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-stone-700">
-                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                        <span>Loan ({loanCount})</span>
+                <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Payment & Financing Breakdown</h3>
+                    <span className="text-[10px] font-bold text-stone-500 bg-stone-100 px-2.5 py-1 rounded-full">
+                        {totalProjects} Total Applications
+                    </span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+                    <div className="p-3 bg-emerald-50/70 border border-emerald-100 rounded-2xl">
+                        <div className="flex items-center gap-1.5 text-xs font-extrabold text-emerald-900">
+                            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                            <span>Loan Financed</span>
+                        </div>
+                        <p className="text-lg font-black text-emerald-950 mt-1">{loanCount}</p>
+                        <p className="text-[10px] text-emerald-700 font-semibold">{loanPerc.toFixed(1)}% of total</p>
                     </div>
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-stone-700">
-                        <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-                        <span>Cash ({cashCount})</span>
+
+                    <div className="p-3 bg-blue-50/70 border border-blue-100 rounded-2xl">
+                        <div className="flex items-center gap-1.5 text-xs font-extrabold text-blue-900">
+                            <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+                            <span>Bank / Cheque</span>
+                        </div>
+                        <p className="text-lg font-black text-blue-950 mt-1">{bankCount}</p>
+                        <p className="text-[10px] text-blue-700 font-semibold">{bankPerc.toFixed(1)}% of total</p>
+                    </div>
+
+                    <div className="p-3 bg-amber-50/70 border border-amber-100 rounded-2xl">
+                        <div className="flex items-center gap-1.5 text-xs font-extrabold text-amber-900">
+                            <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+                            <span>Cash</span>
+                        </div>
+                        <p className="text-lg font-black text-amber-950 mt-1">{cashCount}</p>
+                        <p className="text-[10px] text-amber-700 font-semibold">{cashPerc.toFixed(1)}% of total</p>
+                    </div>
+
+                    <div className="p-3 bg-stone-50 border border-stone-150 rounded-2xl">
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-stone-700">
+                            <span className="w-2.5 h-2.5 rounded-full bg-stone-400" />
+                            <span>Pending Mode</span>
+                        </div>
+                        <p className="text-lg font-black text-stone-900 mt-1">{pendingPaymentCount}</p>
+                        <p className="text-[10px] text-stone-500 font-semibold">{pendingPerc.toFixed(1)}% of total</p>
                     </div>
                 </div>
-                <div className="h-4 bg-stone-100 rounded-full overflow-hidden flex">
+
+                <div className="h-3.5 bg-stone-100 rounded-full overflow-hidden flex gap-0.5 p-0.5">
                     {loanPerc > 0 && (
                         <div
-                            className="h-full bg-emerald-500 transition-all duration-500 flex items-center justify-center text-[9px] font-bold text-white"
+                            className="h-full bg-emerald-500 rounded-full transition-all duration-500"
                             style={{ width: `${loanPerc}%` }}
-                        >
-                            {loanPerc > 15 ? `${loanPerc.toFixed(0)}%` : ''}
-                        </div>
+                            title={`Loan: ${loanCount} (${loanPerc.toFixed(1)}%)`}
+                        />
+                    )}
+                    {bankPerc > 0 && (
+                        <div
+                            className="h-full bg-blue-500 rounded-full transition-all duration-500"
+                            style={{ width: `${bankPerc}%` }}
+                            title={`Bank: ${bankCount} (${bankPerc.toFixed(1)}%)`}
+                        />
                     )}
                     {cashPerc > 0 && (
                         <div
-                            className="h-full bg-amber-500 transition-all duration-500 flex items-center justify-center text-[9px] font-bold text-white"
+                            className="h-full bg-amber-500 rounded-full transition-all duration-500"
                             style={{ width: `${cashPerc}%` }}
-                        >
-                            {cashPerc > 15 ? `${cashPerc.toFixed(0)}%` : ''}
-                        </div>
+                            title={`Cash: ${cashCount} (${cashPerc.toFixed(1)}%)`}
+                        />
+                    )}
+                    {pendingPerc > 0 && (
+                        <div
+                            className="h-full bg-stone-300 rounded-full transition-all duration-500"
+                            style={{ width: `${pendingPerc}%` }}
+                            title={`Pending: ${pendingPaymentCount} (${pendingPerc.toFixed(1)}%)`}
+                        />
                     )}
                 </div>
             </div>

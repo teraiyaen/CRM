@@ -314,9 +314,9 @@ export default function VendorPortal({ user, onLogout, onOpenDevSwitcher }) {
                 from += pageSize;
             }
             
-            // Client-side filtering to see if deleted_at or Give Up was hiding it
+            // Client-side filtering to see if  or Give Up was hiding it
             const activeData = (data || []).filter(r => 
-                r.deleted_at === null && r.installation_status !== 'Giveup'
+                 r.installation_status !== 'Giveup'
             );
 
             console.log('[VendorPortal] Searching names:', searchNames, '| Total found:', (data || []).length, '| Active found:', activeData.length);
@@ -347,7 +347,7 @@ export default function VendorPortal({ user, onLogout, onOpenDevSwitcher }) {
         const channel = supabase.channel(`vendor_customers_${user.id || 'vendor'}`)
             .on('postgres_changes', { event: '*', schema: 'public', table: 'admin' }, payload => {
                 const record = payload.new;
-                const isVisibleToVendor = record && !record.deleted_at &&
+                const isVisibleToVendor = record && 
                     isRecordAssignedToVendor(record) &&
                     // Tag id is 'Giveup' (no space) - "Give Up" never matched, so
                     // given-up records kept arriving through realtime.
@@ -1716,7 +1716,7 @@ export default function VendorPortal({ user, onLogout, onOpenDevSwitcher }) {
                                 <>
                                     {/* Company Header */}
                                     <div className="border-b-2 border-stone-900 pb-3 mb-5 text-center">
-                                        <h1 className="text-lg font-black uppercase tracking-wider text-stone-950">Watersun Electrical Solutions Pvt Ltd</h1>
+                                        <h1 className="text-lg font-black uppercase tracking-wider text-stone-950">SolarFlow</h1>
                                         <p className="text-[11px] font-semibold text-stone-600">Solar PV Project Integration & Material Loading Checklist</p>
                                         <div className="inline-block mt-2 px-2.5 py-0.5 bg-stone-100 border border-stone-300 rounded text-[10px] font-black uppercase tracking-widest text-stone-800">
                                             BILL OF MATERIALS (BOM) - {bomData?.bom_type ? `${bomData.bom_type} TYPE` : 'GENERAL'}

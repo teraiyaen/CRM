@@ -8,44 +8,17 @@
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='7' fill='%23f7a01d'/%3E%3Cg stroke='%23f7a01d' stroke-width='2.6' stroke-linecap='round'%3E%3Cpath d='M16 2v3.5M16 26.5V30M2 16h3.5M26.5 16h3.5'/%3E%3Cpath d='M6.1 6.1l2.5 2.5M23.4 23.4l2.5 2.5M6.1 25.9l2.5-2.5M23.4 8.6l2.5-2.5'/%3E%3C/g%3E%3C/svg%3E" />
-    <title>Watersun CRM</title>
+    <title>SolarFlow — PM Surya Ghar CRM</title>
     <meta name="description"
-        content="CRM &amp; Project Management for Watersun Solar Energy - Track customers through the solar installation pipeline" />
+        content="SolarFlow CRM &amp; Project Management — PM Surya Ghar Muft Bijli Yojana" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
         href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700;800&family=Nunito+Sans:ital,opsz,wght@0,6..12,200..1000;1,6..12,200..1000&display=swap"
         rel="stylesheet">
-    <script>
-        // Stale-index.html rescue.
-        //
-        // GitHub Pages serves index.html with `cache-control: max-age=600`, and
-        // a deploy DELETES the previous hashed bundle. So for up to 10 minutes a
-        // browser can hold an index.html pointing at a bundle that now 404s -
-        // the app renders nothing, and no JS runs, so the in-app update banner
-        // cannot help. This catches that one case and reloads once.
-        //
-        // sessionStorage guards against a reload loop: if the second attempt
-        // also fails the problem is not staleness, and we stop.
-        (function () {
-            window.addEventListener('error', function (e) {
-                var el = e && e.target;
-                if (!el || el.tagName !== 'SCRIPT' || !el.src) return;
-                try {
-                    if (sessionStorage.getItem('ws_stale_reload')) return;
-                    sessionStorage.setItem('ws_stale_reload', '1');
-                } catch (_) { return; }   // private mode: do nothing rather than loop
-                location.reload();
-            }, true);
-
-            // The app loaded, so clear the flag for next time.
-            window.addEventListener('load', function () {
-                try { sessionStorage.removeItem('ws_stale_reload'); } catch (_) { /* ignore */ }
-            });
-        })();
-    </script>
-  <script type="module" crossorigin src="./assets/index-BFH8oTQF.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-DBJB7O_I.css">
+  <script type="module" crossorigin src="./assets/index-Bik-Sebq.js"></script>
+  <link rel="modulepreload" crossorigin href="./assets/createLucideIcon-DvGQCzGP.js">
+  <link rel="stylesheet" crossorigin href="./assets/index-DnyjGjLR.css">
 </head>
 
 <body>

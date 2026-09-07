@@ -61,11 +61,11 @@ export const Page1 = ({ data, fontSizeClass = 'text-[17px]' }) => {
 
         <p className="text-justify font-normal">
           <span className="font-normal">
-            {data.vendorName || 'Watersun Electrical Solutions Pvt Ltd'}
+            {data.vendorName || 'Teriyan Enterprises'}
           </span>{' '}
           having registered office at{' '}
           <span className="font-normal underline">
-            {data.vendorAddress || 'Plot No 40 GIDC Estate Radhanpur'}
+            {data.vendorAddress || 'Plot No. 12, GIDC Industrial Estate, Near Power Grid Substation, Radhanpur, Patan, Gujarat - 385340'}
           </span>{' '}
           (hereinafter referred to as second Party i.e. Vendor/ contractor/ System Integrator).
         </p>

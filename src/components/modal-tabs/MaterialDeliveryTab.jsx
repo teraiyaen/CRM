@@ -409,7 +409,7 @@ export default function MaterialDeliveryTab({
                         <div ref={printableDeliveryRef} className="flex-1 overflow-y-auto p-6 bg-white text-stone-900 print-document" id="printable-delivery">
                             {/* Company Header */}
                             <div className="header-box text-center">
-                                <h1 className="text-base font-black uppercase tracking-wider text-stone-950">Watersun Electrical Solutions Pvt Ltd</h1>
+                                <h1 className="text-base font-black uppercase tracking-wider text-stone-950">SolarFlow</h1>
                                 <p className="text-[11px] font-semibold text-stone-600">Material Delivery, Equipment Dispatch & Serial Numbers Note</p>
                                 <div className="tag">
                                     DISPATCH NOTE - {editData?.invoice_no ? `INVOICE #${editData.invoice_no}` : 'PROJECT DISPATCH'}

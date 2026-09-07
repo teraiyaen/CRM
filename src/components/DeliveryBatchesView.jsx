@@ -51,7 +51,7 @@ export default function DeliveryBatchesView({
                 return rows;
             };
 
-            const all = await pageAll(() => supabase.from('admin').select('*').is('deleted_at', null));
+            const all = await pageAll(() => supabase.from('admin').select('*'));
             setAllCustomers(all);
         } catch (e) {
             console.error('Error fetching customers in DeliveryBatchesView:', e);
@@ -131,14 +131,14 @@ export default function DeliveryBatchesView({
 
             if (!error && data) {
                 setBatches(data);
-                localStorage.setItem('watersun_local_delivery_batches', JSON.stringify(data));
+                localStorage.setItem('solarflow_local_delivery_batches', JSON.stringify(data));
             } else {
                 console.error('Failed to fetch delivery batches from the database:', error);
                 const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-                const localStored = localStorage.getItem('watersun_local_delivery_batches');
+                const localStored = localStorage.getItem('solarflow_local_delivery_batches');
                 const parsed = localStored ? JSON.parse(localStored).filter(b => uuidRe.test(String(b.id))) : [];
                 setBatches(parsed);
-                localStorage.setItem('watersun_local_delivery_batches', JSON.stringify(parsed));
+                localStorage.setItem('solarflow_local_delivery_batches', JSON.stringify(parsed));
             }
         } catch (err) {
             console.error('Failed to load delivery batches:', err);
@@ -217,7 +217,7 @@ export default function DeliveryBatchesView({
                 { action: 'batch save' }
             );
             if (!upsertRes.ok) throw upsertRes.error;
-            localStorage.setItem('watersun_local_delivery_batches', JSON.stringify(updatedBatches));
+            localStorage.setItem('solarflow_local_delivery_batches', JSON.stringify(updatedBatches));
             return true;
         } catch (e) {
             console.error('Failed to sync delivery batch to the database:', e);
@@ -225,7 +225,7 @@ export default function DeliveryBatchesView({
             setBatches(reverted);
             // Keep the cache consistent with what actually persisted.
             try {
-                localStorage.setItem('watersun_local_delivery_batches', JSON.stringify(reverted));
+                localStorage.setItem('solarflow_local_delivery_batches', JSON.stringify(reverted));
             } catch { /* cache is best-effort */ }
             showAlert('Failed to save this batch to the shared database: ' + (e.message || 'Unknown error') + '. Nothing was saved - please try again.', { type: 'error' });
             return false;
@@ -438,7 +438,7 @@ export default function DeliveryBatchesView({
                 }
             } else {
                 setBatches(updatedBatches);
-                localStorage.setItem('watersun_local_delivery_batches', JSON.stringify(updatedBatches));
+                localStorage.setItem('solarflow_local_delivery_batches', JSON.stringify(updatedBatches));
             }
 
             await handleRefresh();
@@ -459,7 +459,7 @@ export default function DeliveryBatchesView({
         const updatedBatches = batches.filter(b => b.id !== batchId);
 
         setBatches(updatedBatches);
-        localStorage.setItem('watersun_local_delivery_batches', JSON.stringify(updatedBatches));
+        localStorage.setItem('solarflow_local_delivery_batches', JSON.stringify(updatedBatches));
         // Only attempt the real delete for batches that were actually
         // persisted with a real UUID - a leftover locally-cached batch
         // from before the id-format fix has no matching row to delete.
@@ -501,7 +501,7 @@ export default function DeliveryBatchesView({
                 if (error) {
                     console.error('Failed to delete delivery batch from the database:', error);
                     setBatches(previousBatches);
-                    localStorage.setItem('watersun_local_delivery_batches', JSON.stringify(previousBatches));
+                    localStorage.setItem('solarflow_local_delivery_batches', JSON.stringify(previousBatches));
                     showAlert('Failed to delete this batch from the shared database: ' + error.message + '. Nothing was changed - please try again.', { type: 'error' });
                     return;
                 }
@@ -570,7 +570,7 @@ export default function DeliveryBatchesView({
 
     const eligibleProjects = useMemo(() => {
         return customers.filter(c => {
-            if (c.deleted_at) return false;
+            
             const isAvailable = !c.delivery_batch_id || (editingBatch && c.delivery_batch_id === editingBatch.batch_no);
             if (!isAvailable) return false;
             const matchesQuery = !projectSearchQuery || 
@@ -801,7 +801,7 @@ export default function DeliveryBatchesView({
                                                     const previousBatch = batch;
                                                     const updatedBatches = batches.map(b => b.id === batch.id ? { ...b, status: newStatus } : b);
                                                     setBatches(updatedBatches);
-                                                    localStorage.setItem("watersun_local_delivery_batches", JSON.stringify(updatedBatches));
+                                                    localStorage.setItem("solarflow_local_delivery_batches", JSON.stringify(updatedBatches));
                                                     try {
                                                         const projectIds = linkedProjects.map(p => p.id);
                                                         let atomicSuccess = false;
@@ -1452,7 +1452,7 @@ export default function DeliveryBatchesView({
                         <div ref={printableRef} className="flex-1 overflow-y-auto p-8 bg-white text-stone-900 print-document" id="printable-master-batch">
                             {/* Company Header */}
                             <div className="border-b-2 border-stone-900 pb-4 mb-5 text-center">
-                                <h1 className="text-xl font-black uppercase tracking-wider text-stone-950">Watersun Electrical Solutions Pvt Ltd</h1>
+                                <h1 className="text-xl font-black uppercase tracking-wider text-stone-950">SolarFlow</h1>
                                 <p className="text-xs font-semibold text-stone-600 mt-0.5">Master Delivery Batch & Security Gate Pass Manifest</p>
                                 <div className="inline-block mt-2 px-3 py-1 bg-stone-100 border border-stone-300 rounded text-[11px] font-black uppercase tracking-widest text-stone-800">
                                     BATCH DISPATCH MANIFEST - {printingBatch.batch_no}

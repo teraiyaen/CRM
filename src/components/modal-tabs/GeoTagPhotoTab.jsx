@@ -114,45 +114,6 @@ export default function GeoTagPhotoTab({
                     </div>
                 </div>
             </div>
-
-            {/* Checklist Section */}
-            <div className="bg-white p-6 rounded-[24px] border border-stone-100 shadow-sm space-y-4">
-                <div className="flex items-center justify-between border-b border-stone-100 pb-2.5">
-                    <h4 className="text-xs font-bold text-stone-700 uppercase tracking-widest flex items-center gap-2">
-                        <ClipboardList className="w-4 h-4 text-amber-500" /> Geo Tag Photo Checklist
-                    </h4>
-                    <span className="text-[9px] font-bold text-amber-600 uppercase bg-amber-50 px-2 py-0.5 rounded">
-                        Image Upload Mandatory
-                    </span>
-                </div>
-                {!canUploadImage && (
-                    <p className="text-[10px] text-stone-400 font-semibold italic">Only vendors can edit this section. You have view-only access.</p>
-                )}
-                <div className="flex flex-col gap-2">
-                    <CheckboxRemarkItem 
-                        label="Geo Tag Image Uploaded *" 
-                        field="geo_tag_image" 
-                        value={editData.geo_tag_image} 
-                        onChange={handleChange} 
-                        isEditing={canUploadImage} 
-                        documents={documents} 
-                        onUpload={onFileUpload} 
-                        onDelete={onFileDelete} 
-                        onPreview={onFilePreview} 
-                        onUpdateRemark={onUpdateRemark}
-                        canDelete={canDeleteDocs}
-                    />
-                </div>
-
-                {/* Mandatory Image Note if Proceed is chosen without an image */}
-                {editData.geo_tag_status === 'Proceed' && !editData.geo_tag_image && (
-                    <div className="pt-2 border-t border-stone-100">
-                        <p className="text-[11px] font-bold text-rose-600 bg-rose-50 p-2.5 rounded-xl border border-rose-200 text-center">
-                            ⚠️ Geo Tag photograph must be uploaded before you can Save & Move to Discom Submission.
-                        </p>
-                    </div>
-                )}
-            </div>
         </div>
     );
 }

@@ -52,33 +52,18 @@ export default function InstallationPaymentsView({ onSelectCustomer, currentUser
         try {
             const { data, error } = await supabase
                 .from('admin')
-                // Only the columns this ledger renders. It was select('*'), pulling
-                // ~90 columns for every installed customer - now 3,278 rows since
-                // the installation_status filter was fixed.
-                .select('id, customer_name, phone_number, consumer_no, system_capacity_kwp, vendor, vendor_quote, vendor_payment_status, vendor_paid_date, material_delivery_date, installation_date, installation_status')
-                .is('deleted_at', null)
-                .or('installation_status.ilike.%yes%,installation_status.ilike.%installed%')
+                .select('*')
+                .or('portal_status.ilike.%Install%,status.ilike.%Install%')
                 .order('created_at', { ascending: false });
 
             if (!error && data) {
                 setInstallations(data);
             } else {
-                console.error("Error fetching completed installations for ledger:", error);
-                // Fallback: try fetching where installation_status is not null and filter in memory
                 const { data: allData } = await supabase
                     .from('admin')
-                    // Only the columns this ledger renders. It was select('*'), pulling
-                // ~90 columns for every installed customer - now 3,278 rows since
-                // the installation_status filter was fixed.
-                .select('id, customer_name, phone_number, consumer_no, system_capacity_kwp, vendor, vendor_quote, vendor_payment_status, vendor_paid_date, material_delivery_date, installation_date, installation_status')
-                    .is('deleted_at', null)
-                    .not('installation_status', 'is', null);
+                    .select('*');
                 if (allData) {
-                    const matched = allData.filter(c =>
-                        normalizeInstallationStatus(c.installation_status) === 'Yes' ||
-                        ['yes', 'installed'].includes(String(c.installation_status || '').trim().toLowerCase())
-                    );
-                    setInstallations(matched);
+                    setInstallations(allData);
                 } else {
                     setInstallations([]);
                 }

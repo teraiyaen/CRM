@@ -220,7 +220,7 @@ export default function MaterialIntegrationTab({
                     },
                     items: next
                 };
-                localStorage.setItem(`watersun_bom_${customer.id}`, JSON.stringify(localData));
+                localStorage.setItem(`solarflow_bom_${customer.id}`, JSON.stringify(localData));
             } catch { /* best-effort, ignore failure */ }
             return next;
         });
@@ -449,7 +449,7 @@ export default function MaterialIntegrationTab({
                     },
                     items: items
                 };
-                localStorage.setItem(`watersun_bom_${targetCust.id}`, JSON.stringify(localBomData));
+                localStorage.setItem(`solarflow_bom_${targetCust.id}`, JSON.stringify(localBomData));
             } catch (e) {
                 console.error('LocalStorage BOM save failed:', e);
             }

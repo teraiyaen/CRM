@@ -3,7 +3,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 // Same reason as add_user: the custom domain needs to be an allowed origin.
-const ALLOWED_ORIGINS = ['https://watersun.deeprootsystems.in', 'https://watersun9.github.io']
+const ALLOWED_ORIGINS = ['', '']
 
 function isAllowedOrigin(origin: string) {
   if (ALLOWED_ORIGINS.includes(origin)) return true

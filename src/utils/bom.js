@@ -139,7 +139,7 @@ export const loadBomForCustomer = async (customer, activeType) => {
 
     if (!bomData) {
         try {
-            const localRaw = localStorage.getItem(`watersun_bom_${customer.id}`);
+            const localRaw = localStorage.getItem(`solarflow_bom_${customer.id}`);
             if (localRaw) {
                 const parsed = JSON.parse(localRaw);
                 bomData = parsed.bom || parsed;

@@ -880,7 +880,7 @@ export default function DiscomSubmissionTab({
                                         village: editData.villages || '',
                                         taluka: editData.villages || '',
                                         district: editData.sub_divisions || '',
-                                        vendorName: 'Watersun Electrical Solutions Pvt Ltd',
+                                        vendorName: 'SolarFlow',
                                         vendorAddress: 'Plot No 40 GIDC Estate Radhanpur',
                                         paymentTerms: 'Mutually Agreed Terms of Payment',
                                         showHighlights: true,

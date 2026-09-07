@@ -528,7 +528,7 @@ export function exportAllToCSV(customers) {
     const csvContent = '\uFEFF' + [headers.map(escapeCSV).join(','), ...rows].join('\r\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
-    downloadFileWithSaveAs(url, `watersun_crm_export_${currentDateStr}.csv`).finally(() => {
+    downloadFileWithSaveAs(url, `solarflow_crm_export_${currentDateStr}.csv`).finally(() => {
         setTimeout(() => URL.revokeObjectURL(url), 2000);
     });
 }
@@ -936,14 +936,12 @@ export async function fetchAgent2SubAgents(branchName) {
 export const normalizeLoanTag = (tag) => {
     if (!tag) return null;
     const s = String(tag).trim().toLowerCase();
-    if (s === 'all clear' || s === 'all_clear' || s === 'allclear' || s === 'clear') return 'All Clear';
-    if (s === 'in progress' || s === 'in_progress' || s === 'inprogress' || s === 'pending') return 'In Progress';
-    if (s === 'processed' || s.includes('process')) return 'Processed';
-    if (s.includes('1st') || s.includes('first')) return '1st Payment';
-    if (s.includes('2nd') || s.includes('second')) return '2nd Payment';
+    if (s.includes('partial')) return 'Partial Disburse';
+    if (s.includes('disburs')) return 'Disbursed';
     if (s.includes('sanc') || s.includes('approved')) return 'Sanctioned';
+    if (s.includes('reject') || s.includes('decline')) return 'Reject';
     if (s.includes('return')) return 'Returned';
-    if (s.includes('reject') || s.includes('decline')) return 'Rejected';
+    if (s.includes('process') || s.includes('pending')) return 'Inprocess';
     return tag.trim();
 };
 

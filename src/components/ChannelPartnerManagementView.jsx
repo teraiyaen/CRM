@@ -57,12 +57,11 @@ export default function ChannelPartnerManagementView({ customers = [], currentUs
         while (true) {
             const { data, error } = await supabase
                 .from('admin')
-                .select('channel_partner')
-                .is('deleted_at', null)
+                .select('dealer, ref_agent')
                 .range(from, from + pageSize - 1);
             if (error) throw error;
             if (!data || data.length === 0) break;
-            all = all.concat(data);
+            all = all.concat(data.map(r => ({ channel_partner: r.dealer || r.ref_agent })));
             if (data.length < pageSize) break;
             from += pageSize;
         }
@@ -254,9 +253,7 @@ export default function ChannelPartnerManagementView({ customers = [], currentUs
             const [profRes, recRes] = await Promise.all([
                 supabase.from('profiles').select('id, name, email, status').eq('user_type', 'stamp').order('name'),
                 supabase.from('admin')
-                    .select('id, customer_name, discom_submission')
-                    .eq('discom_submission->>stamp_sent', 'true')
-                    .is('deleted_at', null),
+                    .select('*')
             ]);
             if (profRes.error) throw profRes.error;
             if (recRes.error) throw recRes.error;
@@ -609,20 +606,20 @@ export default function ChannelPartnerManagementView({ customers = [], currentUs
             if (!metaRes.ok) throw metaRes.error;
 
             // Map category to column in admin table
-            let dbField = '';
-            if (category === 'channel_partner') dbField = 'channel_partner';
-            else if (category === 'module_brand') dbField = 'module_brand';
-            else if (category === 'registration_by') dbField = 'registration_by';
-            else if (category === 'inverter_make') dbField = 'inverter_make';
-
             try {
-                if (dbField) await cascade('admin', dbField);
-
-                // Keep real logins in step so a channel partner's own portal
-                // session reflects the rename immediately.
-                if (category === 'channel_partner') await cascade('profiles', 'channel_partner');
-
-                if (category === 'integration_by') await cascade('bom_items', 'integration_by');
+                if (category === 'channel_partner') {
+                    try { await cascade('admin', 'dealer'); } catch (_) {}
+                    try { await cascade('admin', 'channel_partner'); } catch (_) {}
+                    try { await cascade('profiles', 'channel_partner'); } catch (_) {}
+                } else if (category === 'module_brand') {
+                    await cascade('admin', 'module_brand');
+                } else if (category === 'registration_by') {
+                    await cascade('admin', 'registration_by');
+                } else if (category === 'inverter_make') {
+                    await cascade('admin', 'inverter_make');
+                } else if (category === 'integration_by') {
+                    await cascade('bom_items', 'integration_by');
+                }
             } catch (cascadeErr) {
                 // Put back every cascade that DID commit, newest first, then the
                 // dropdown entry. Reporting "nothing was changed" while
@@ -688,7 +685,7 @@ export default function ChannelPartnerManagementView({ customers = [], currentUs
     // rather than blanking, so nothing is lost or hidden.
     const handleDeleteMetadata = async (id, category, label) => {
         const TARGET = {
-            channel_partner: { table: 'admin', column: 'channel_partner', noun: 'customer records' },
+            channel_partner: { table: 'admin', column: 'dealer', noun: 'customer records' },
             module_brand:    { table: 'admin', column: 'module_brand',    noun: 'customer records' },
             registration_by: { table: 'admin', column: 'registration_by', noun: 'customer records' },
             inverter_make:   { table: 'admin', column: 'inverter_make',   noun: 'customer records' },
@@ -766,28 +763,6 @@ export default function ChannelPartnerManagementView({ customers = [], currentUs
                             </div>
                             
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                                {/* Channel Partner Offices (CPO) Card */}
-                                <button
-                                    onClick={() => {
-                                        setSelectedCpo(null);
-                                        setActiveManageCategory('cpo_office');
-                                    }}
-                                    className="bg-white rounded-[24px] p-5 border border-stone-150 shadow-xs flex flex-col justify-between h-44 hover:shadow-md hover:border-amber-400 hover:bg-amber-50/20 active:scale-[0.98] transition-all text-left focus:outline-none w-full group relative overflow-hidden"
-                                >
-                                    <div className="space-y-3.5 w-full">
-                                        <div className="p-2.5 bg-amber-50 group-hover:bg-amber-100 rounded-xl w-fit transition-colors duration-305 text-amber-700">
-                                            <Building2 className="w-5 h-5" />
-                                        </div>
-                                        <div>
-                                            <h3 className="font-extrabold text-stone-800 text-xs group-hover:text-amber-700 transition-colors duration-305">CPO Offices & Dealers</h3>
-                                            <p className="text-[11px] text-stone-400 font-medium mt-0.5">{cpos.length} registered office branches</p>
-                                        </div>
-                                    </div>
-                                    <span className="text-[11px] font-bold text-amber-700 flex items-center gap-1 transition-colors duration-305">
-                                        Manage Offices & Teams <span className="transition-transform group-hover:translate-x-1.5 duration-305">→</span>
-                                    </span>
-                                </button>
-
                                 {/* Channel Partners Card */}
                                 <button
                                     onClick={() => setActiveManageCategory('channel_partner')}
@@ -864,7 +839,7 @@ export default function ChannelPartnerManagementView({ customers = [], currentUs
                                     </span>
                                 </button>
 
-                                {/* Integration Staff Card */}
+                                {/* Integration Staff Card - Commented out for now
                                 <button
                                     onClick={() => setActiveManageCategory('integration_by')}
                                     className="bg-white rounded-[24px] p-5 border border-stone-150 shadow-xs flex flex-col justify-between h-44 hover:shadow-md hover:border-stone-300 hover:bg-stone-50/50 active:scale-[0.98] transition-all text-left focus:outline-none w-full group"
@@ -881,9 +856,9 @@ export default function ChannelPartnerManagementView({ customers = [], currentUs
                                     <span className="text-[11px] font-bold text-stone-600 group-hover:text-amber-650 flex items-center gap-1 transition-colors duration-305">
                                         Open Manager <span className="transition-transform group-hover:translate-x-1.5 duration-305">→</span>
                                     </span>
-                                </button>
+                                </button> */}
 
-                                {/* Vendors Card */}
+                                {/* Vendors Card - Commented out for now
                                 <button
                                     onClick={() => setActiveManageCategory('vendor')}
                                     className="bg-white rounded-[24px] p-5 border border-stone-150 shadow-xs flex flex-col justify-between h-44 hover:shadow-md hover:border-stone-300 hover:bg-stone-50/50 active:scale-[0.98] transition-all text-left focus:outline-none w-full group"
@@ -900,9 +875,9 @@ export default function ChannelPartnerManagementView({ customers = [], currentUs
                                     <span className="text-[11px] font-bold text-stone-600 group-hover:text-amber-650 flex items-center gap-1 transition-colors duration-305">
                                         Open Manager <span className="transition-transform group-hover:translate-x-1.5 duration-305">→</span>
                                     </span>
-                                </button>
+                                </button> */}
 
-                                {/* Stamp Makers Card */}
+                                {/* Stamp Makers Card - Commented out for now
                                 <button
                                     onClick={() => setActiveManageCategory('stamp_report')}
                                     className="bg-white rounded-[24px] p-5 border border-stone-150 shadow-xs flex flex-col justify-between h-44 hover:shadow-md hover:border-stone-300 hover:bg-stone-50/50 active:scale-[0.98] transition-all text-left focus:outline-none w-full group"
@@ -919,7 +894,7 @@ export default function ChannelPartnerManagementView({ customers = [], currentUs
                                     <span className="text-[11px] font-bold text-stone-600 group-hover:text-amber-650 flex items-center gap-1 transition-colors duration-305">
                                         View Report <span className="transition-transform group-hover:translate-x-1.5 duration-305">→</span>
                                     </span>
-                                </button>
+                                </button> */}
 
                                 {/* Drivers Card */}
                                 <button
@@ -1247,7 +1222,24 @@ export default function ChannelPartnerManagementView({ customers = [], currentUs
 
                             {/* Add / Search Section */}
                             {isChannelPartnerCat ? (
-                                <div className="p-4 border-b border-stone-100 bg-stone-50/50 space-y-2">
+                                <div className="p-4 border-b border-stone-100 bg-stone-50/50 space-y-2.5">
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            placeholder="Enter new channel partner / dealer name..."
+                                            value={newPartner}
+                                            onChange={e => setNewPartner(e.target.value)}
+                                            onKeyDown={e => e.key === 'Enter' && handleAddPartner()}
+                                            className="flex-1 bg-white border border-stone-200 rounded-xl px-4 py-2 text-sm focus:border-amber-400 outline-none transition uppercase"
+                                            autoFocus
+                                        />
+                                        <button
+                                            onClick={handleAddPartner}
+                                            className="flex items-center gap-1.5 bg-stone-900 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-stone-800 transition-colors shadow-md cursor-pointer"
+                                        >
+                                            <Plus className="w-4 h-4" /> Add
+                                        </button>
+                                    </div>
                                     <div className="relative flex items-center">
                                         <Search className="w-4 h-4 text-stone-400 absolute left-3.5 pointer-events-none" />
                                         <input
@@ -1255,8 +1247,7 @@ export default function ChannelPartnerManagementView({ customers = [], currentUs
                                             placeholder="Search channel partner directory..."
                                             value={partnerSearch}
                                             onChange={e => setPartnerSearch(e.target.value)}
-                                            className="w-full bg-white border border-stone-200 rounded-xl pl-10 pr-9 py-2 text-sm focus:border-amber-400 outline-none transition"
-                                            autoFocus
+                                            className="w-full bg-white border border-stone-200 rounded-xl pl-10 pr-9 py-1.5 text-xs focus:border-amber-400 outline-none transition"
                                         />
                                         {partnerSearch && (
                                             <button
@@ -1268,9 +1259,6 @@ export default function ChannelPartnerManagementView({ customers = [], currentUs
                                             </button>
                                         )}
                                     </div>
-                                    <p className="text-[11px] text-stone-500 font-medium">
-                                        Channel Partners are managed in <b className="text-stone-700">User Management</b>. Adding from Operations is locked to keep directories aligned.
-                                    </p>
                                 </div>
                             ) : isDriverCat ? (
                                 <div className="p-4 border-b border-stone-100 bg-stone-50/50 space-y-2">

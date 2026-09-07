@@ -147,7 +147,7 @@ export default function AgentPortal({ user, onLogout, onOpenDevSwitcher }) {
                 return;
             }
             const buildQuery = () => {
-                let q = supabase.from('admin').select('*').is('deleted_at', null).order('created_at', { ascending: false });
+                let q = supabase.from('admin').select('*').order('created_at', { ascending: false });
                 const myName = (user?.name || '').trim();
 
                 if (isAgent2) {
@@ -210,7 +210,7 @@ export default function AgentPortal({ user, onLogout, onOpenDevSwitcher }) {
                 const custCp = (record?.channel_partner || '').trim().toLowerCase();
                 const custSubCp = (record?.sub_channel_partner || '').trim().toLowerCase();
 
-                const belongsToAgent = record && !record.deleted_at && (
+                const belongsToAgent = record &&  (
                     isAgent2
                         ? (custSubCp === myName && custCp === partnerName)
                         : custCp === myName
@@ -873,7 +873,7 @@ export default function AgentPortal({ user, onLogout, onOpenDevSwitcher }) {
             village: selectedCust.villages || '',
             taluka: selectedCust.villages || '',
             district: selectedCust.sub_divisions || '',
-            vendorName: 'Watersun Electrical Solutions Pvt Ltd',
+            vendorName: 'SolarFlow',
             vendorAddress: 'Plot No 40 GIDC Estate Radhanpur',
             paymentTerms: 'Mutually Agreed Terms of Payment',
             firstPartySignature: sigUrl || '',
@@ -2607,7 +2607,7 @@ export default function AgentPortal({ user, onLogout, onOpenDevSwitcher }) {
                                 <div className="flex items-center gap-3">
                                     <div className="rounded-2xl bg-white/20 p-2.5"><AlertTriangle size={21} /></div>
                                     <div>
-                                        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-50">Watersun checklist</p>
+                                        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-50">SolarFlow checklist</p>
                                         <h3 id="requirements-title" className="mt-0.5 text-lg font-black">A few details need attention</h3>
                                     </div>
                                 </div>

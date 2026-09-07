@@ -65,11 +65,11 @@ export default function DevRoleSwitcher({ currentUser, onSwitchUser, isOpen, onT
     const handleQuickPreview = (role) => {
         onSwitchUser({
             id: `dev-preview-${role.user_type}`,
-            email: `preview-${role.user_type}@watersun.dev`,
+            email: `preview-${role.user_type}@solarflow.dev`,
             userType: role.user_type,
             role: role.role,
             name: `${role.label} (Preview)`,
-            channel_partner: role.user_type === "channel_partner_office" || role.user_type === "office2" || role.user_type === "agent2" || role.user_type === "agent" ? "Demo Partner" : "",
+            channel_partner: role.user_type === "agent" ? "Demo Partner" : "",
             isDevRole: true,
         });
 
@@ -144,7 +144,7 @@ export default function DevRoleSwitcher({ currentUser, onSwitchUser, isOpen, onT
                                             type="email"
                                             value={searchEmail}
                                             onChange={(e) => setSearchEmail(e.target.value)}
-                                            placeholder="e.g. agent.rahul@watersun.com"
+                                            placeholder="e.g. agent.rahul@solarflow.com"
                                             className="w-full pl-10 pr-4 py-3 bg-stone-50 border border-stone-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-amber-400 transition-all text-stone-800"
                                             autoComplete="off"
                                             autoFocus

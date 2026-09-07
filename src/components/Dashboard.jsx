@@ -22,6 +22,7 @@ const InstallationView = lazyWithRetry(() => import('./InstallationView'));
 const CustomerDetailModal = lazyWithRetry(() => import('./CustomerDetailModal'));
 const AddLeadModal = lazyWithRetry(() => import('./AddLeadModal'));
 const ActivityLogView = lazyWithRetry(() => import('./ActivityLogView'));
+const MISUploadView = lazyWithRetry(() => import('./MISUploadView'));
 const UserManagementView = lazyWithRetry(() => import('./UserManagementView'));
 const TrashView = lazyWithRetry(() => import('./TrashView'));
 const ChannelPartnerManagementView = lazyWithRetry(() => import('./ChannelPartnerManagementView'));
@@ -34,7 +35,7 @@ const ViewLoader = () => <div className="flex items-center justify-center h-64">
 
 import {
     LayoutDashboard, Activity, UserCog, Menu, X,
-    Search, Plus, Download, LogOut, Trash2, Users, Tag, IndianRupee, Wrench, CreditCard, Terminal, Truck
+    Search, Plus, Download, LogOut, Trash2, Users, Tag, IndianRupee, Wrench, CreditCard, FileSpreadsheet, Terminal, Truck
 } from 'lucide-react';
 
 // ── NavBtn ────────────────────────────────────────────────────────────────────
@@ -69,7 +70,7 @@ export default function Dashboard({ user, onLogout, onOpenDevSwitcher }) {
     // Remember current view across page reloads
     const [currentView, setCurrentView] = useState(() => {
         if (typeof window !== 'undefined') {
-            const saved = window.sessionStorage.getItem('watersun_current_view');
+            const saved = window.sessionStorage.getItem('solarflow_current_view');
             if (saved) return saved;
         }
         return 'dashboard';
@@ -78,10 +79,10 @@ export default function Dashboard({ user, onLogout, onOpenDevSwitcher }) {
     // Remember selected stage across page reloads
     const [selectedStage, setSelectedStage] = useState(() => {
         if (typeof window !== 'undefined') {
-            const saved = window.sessionStorage.getItem('watersun_selected_stage');
-            if (saved) return saved;
+            const saved = window.sessionStorage.getItem('solarflow_selected_stage');
+            if (saved && saved !== 'ALL') return saved;
         }
-        return STAGE_IDS.LEADS;
+        return 'REGISTRATION';
     });
 
     const [stageSearch, setStageSearch] = useState('');    // per-stage search
@@ -102,13 +103,13 @@ export default function Dashboard({ user, onLogout, onOpenDevSwitcher }) {
     // Synchronize navigation state to sessionStorage
     useEffect(() => {
         if (typeof window !== 'undefined') {
-            window.sessionStorage.setItem('watersun_current_view', currentView);
+            window.sessionStorage.setItem('solarflow_current_view', currentView);
         }
     }, [currentView]);
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
-            window.sessionStorage.setItem('watersun_selected_stage', selectedStage);
+            window.sessionStorage.setItem('solarflow_selected_stage', selectedStage);
         }
     }, [selectedStage]);
 
@@ -116,9 +117,9 @@ export default function Dashboard({ user, onLogout, onOpenDevSwitcher }) {
     useEffect(() => {
         if (typeof window !== 'undefined') {
             if (selectedCustomer?.id) {
-                window.sessionStorage.setItem('watersun_selected_customer_id', selectedCustomer.id);
+                window.sessionStorage.setItem('solarflow_selected_customer_id', selectedCustomer.id);
             } else {
-                window.sessionStorage.removeItem('watersun_selected_customer_id');
+                window.sessionStorage.removeItem('solarflow_selected_customer_id');
             }
         }
     }, [selectedCustomer]);
@@ -127,7 +128,7 @@ export default function Dashboard({ user, onLogout, onOpenDevSwitcher }) {
     useEffect(() => {
         const restoreOpenedCustomer = async () => {
             if (typeof window === 'undefined') return;
-            const savedCustId = window.sessionStorage.getItem('watersun_selected_customer_id');
+            const savedCustId = window.sessionStorage.getItem('solarflow_selected_customer_id');
             if (!savedCustId) return;
 
             try {
@@ -169,14 +170,14 @@ export default function Dashboard({ user, onLogout, onOpenDevSwitcher }) {
                 let query = supabase
                     .from('admin')
                     .select('*')
-                    .is('deleted_at', null)
+                    
                     .order('created_at', { ascending: false })
                     .range(from, from + CHUNK_SIZE - 1);
 
                 if (isChannelPartnerOffice) {
-                    query = query.ilike('channel_partner', partnerName);
+                    query = query.or(`dealer.ilike.%${partnerName}%,ref_agent.ilike.%${partnerName}%`);
                 } else if (channelPartnerFilter && channelPartnerFilter.trim()) {
-                    query = query.ilike('channel_partner', channelPartnerFilter.trim());
+                    query = query.or(`dealer.ilike.%${channelPartnerFilter.trim()}%,ref_agent.ilike.%${channelPartnerFilter.trim()}%`);
                 }
 
                 const { data, error } = await query;
@@ -205,96 +206,184 @@ export default function Dashboard({ user, onLogout, onOpenDevSwitcher }) {
         }
     };
 
-    // ── Data fetching ──────────────────────────────────────────────────────────
-    // `skipMeta` lets the realtime path refresh only the numbers. The metadata
-    // table is nearly static (dropdown lists), but it was refetched on EVERY
-    // realtime event - so one person saving a customer meant 30 connected
-    // clients each running 3 queries. Metadata is now fetched on mount and when
-    // the branch filter changes, not on every write anywhere in the system.
-    const fetchMetricsAndMeta = async (skipMeta = false) => {
-        const targetPartner = isChannelPartnerOffice ? partnerName : (channelPartnerFilter?.trim() || null);
-        const [metricsRes, metaRes, batchesRes] = await Promise.all([
-            supabase.rpc('get_dashboard_metrics', { 
-                p_channel_partner: targetPartner 
-            }),
-            skipMeta ? Promise.resolve({ data: null, error: null })
-                     : supabase.from('metadata').select('category, label'),
-            supabase.from('delivery_batches').select('id', { count: 'exact', head: true }).neq('status', 'DELIVERED')
-        ]);
+    const fetchMetadata = async () => {
+        try {
+            const [metaRes, dealersRes] = await Promise.all([
+                supabase.from('metadata').select('category, label'),
+                supabase.from('admin').select('dealer, ref_agent').limit(2000)
+            ]);
 
-        let finalMetrics = {
-            totalProjects: 0, completedCount: 0, liveProjects: 0, loanCount: 0, cashCount: 0, stageCounts: {}, deliveryBatchesCount: 0,
-            installationTagCount: 0, subsidyTagCount: 0, loanTagCount: 0
-        };
+            const metaMap = {};
+            if (metaRes.data) {
+                metaRes.data.forEach(item => {
+                    if (!metaMap[item.category]) metaMap[item.category] = [];
+                    if (item.label && !metaMap[item.category].includes(item.label)) {
+                        metaMap[item.category].push(item.label);
+                    }
+                });
+            }
 
-        if (!metricsRes.error && metricsRes.data) {
-            finalMetrics = { 
-                ...finalMetrics,
-                ...metricsRes.data,
-                loanTagCount: metricsRes.data.loanTagCount ?? metricsRes.data.loanCount ?? 0
-            };
-        } else {
-            console.error('Metrics fetch error:', metricsRes.error);
-        }
-        
-        if (!batchesRes.error) {
-            finalMetrics.deliveryBatchesCount = batchesRes.count || 0;
-        }
-        setMetrics(finalMetrics);
+            const cpList = metaMap['channel_partner'] || [];
+            if (dealersRes.data) {
+                dealersRes.data.forEach(r => {
+                    const d = (r.dealer || '').trim();
+                    const a = (r.ref_agent || '').trim();
+                    if (d && !cpList.includes(d)) cpList.push(d);
+                    if (a && !cpList.includes(a)) cpList.push(a);
+                });
+            }
+            metaMap['channel_partner'] = [...new Set(cpList)].sort((a, b) => a.localeCompare(b));
 
-        if (!metaRes.error && metaRes.data) {
-            const grouped = {};
-            metaRes.data.forEach(({ category, label }) => {
-                if (!grouped[category]) grouped[category] = [];
-                grouped[category].push(label);
-            });
-            setMeta(grouped);
+            setMeta(metaMap);
+        } catch (err) {
+            console.error('Error loading metadata in Dashboard:', err);
         }
     };
 
+    // ── Data fetching ──────────────────────────────────────────────────────────
+    // `skipMeta` lets the realtime path refresh only the numbers.
+    const fetchMetricsAndMeta = async (skipMeta = false) => {
+        try {
+            if (!skipMeta) {
+                fetchMetadata();
+            }
+
+            let query = supabase
+                .from('admin')
+                .select('status, portal_status, dealer, ref_agent, proposed_capacity_kw, loan_status, financing_tag, payment_mode_raw', { count: 'exact' });
+
+            if (isChannelPartnerOffice) {
+                query = query.or(`dealer.ilike.%${partnerName}%,ref_agent.ilike.%${partnerName}%`);
+            } else if (channelPartnerFilter && channelPartnerFilter.trim()) {
+                query = query.or(`dealer.ilike.%${channelPartnerFilter.trim()}%,ref_agent.ilike.%${channelPartnerFilter.trim()}%`);
+            }
+
+            const { data, error, count } = await query;
+
+            const stageCounts = {};
+            PRIMARY_STAGES.forEach(s => { stageCounts[s.id] = 0; });
+            let completed = 0;
+            let live = 0;
+            let loanCount = 0;
+            let bankCount = 0;
+            let cashCount = 0;
+            let pendingPaymentCount = 0;
+
+            if (!error && data) {
+                data.forEach(row => {
+                    const rawPm = (row.payment_mode_raw || '').toUpperCase();
+                    const hasLoan = !!(row.loan_status || row.financing_tag || rawPm.includes('LOAN') || rawPm.includes('LAON'));
+                    const hasBank = !hasLoan && (rawPm.includes('BANK') || rawPm.includes('CHQ'));
+                    const hasCash = !hasLoan && !hasBank && rawPm.includes('CASH');
+
+                    if (hasLoan) {
+                        loanCount++;
+                    } else if (hasBank) {
+                        bankCount++;
+                    } else if (hasCash) {
+                        cashCount++;
+                    } else {
+                        pendingPaymentCount++;
+                    }
+
+                    const st = (row.portal_status || row.status || '').toUpperCase();
+                    if (st.includes('DISBURS') || st.includes('COMPLETE')) {
+                        completed++;
+                        stageCounts['SUBSIDY DISBURSAL'] = (stageCounts['SUBSIDY DISBURSAL'] || 0) + 1;
+                    } else if (st.includes('REQUEST')) {
+                        live++;
+                        stageCounts['SUBSIDY REQUEST'] = (stageCounts['SUBSIDY REQUEST'] || 0) + 1;
+                    } else if (st.includes('INSPECT')) {
+                        live++;
+                        stageCounts['INSPECTION'] = (stageCounts['INSPECTION'] || 0) + 1;
+                    } else if (st.includes('INSTALL')) {
+                        live++;
+                        stageCounts['INSTALLATION'] = (stageCounts['INSTALLATION'] || 0) + 1;
+                    } else if (st.includes('AGREEMENT') || st.includes('UPLOAD') || st.includes('VENDOR') || st.includes('VENDER')) {
+                        live++;
+                        stageCounts['UPLOAD AGREEMENT'] = (stageCounts['UPLOAD AGREEMENT'] || 0) + 1;
+                    } else if (st.includes('FEASIB')) {
+                        live++;
+                        stageCounts['FEASIBILITY'] = (stageCounts['FEASIBILITY'] || 0) + 1;
+                    } else {
+                        stageCounts['REGISTRATION'] = (stageCounts['REGISTRATION'] || 0) + 1;
+                    }
+                });
+            }
+
+            setMetrics({
+                totalProjects: count || 0,
+                completedCount: completed,
+                liveProjects: live,
+                stageCounts: stageCounts,
+                loanTagCount: loanCount,
+                loanCount: loanCount,
+                bankCount: bankCount,
+                cashCount: cashCount,
+                pendingPaymentCount: pendingPaymentCount,
+                subsidyTagCount: completed,
+                installationTagCount: stageCounts['INSTALLATION'] || 0,
+                deliveryBatchesCount: 0
+            });
+        } catch (err) {
+            console.error('Metrics fetch error:', err);
+        }
+    };
 
     const fetchStageCustomers = async (stage = selectedStage, pageNum = 0) => {
         setLoading(true);
-        const normalizedStage = (stage || STAGE_IDS.LEADS).toUpperCase();
-        let query = supabase
-            .from('admin')
-            // Was select('*') - ~90 columns for 50 cards that render 10 fields.
-            // CUSTOMER_CARD_COLUMNS already existed for this and was imported
-            // but never used. The detail modal fetches the full row on open, so
-            // nothing downstream loses data.
-            .select(CUSTOMER_CARD_COLUMNS)
-            // .eq not .ilike: normalizedStage is already uppercased above, and
-            // all 3,828 stage values in the table are clean uppercase - so this
-            // matches exactly the same rows. ILIKE cannot use an index and
-            // forced a case-folding comparison over every row on each switch.
-            .eq('stage', normalizedStage)
-            .order('created_at', { ascending: false })
-            .range(pageNum * 50, (pageNum + 1) * 50 - 1);
-            
-        if (isChannelPartnerOffice) {
-            query = query.ilike('channel_partner', `%${partnerName}%`);
-        } else if (channelPartnerFilter && channelPartnerFilter.trim()) {
-            query = query.ilike('channel_partner', `%${channelPartnerFilter.trim()}%`);
-        }
+        try {
+            let query = supabase
+                .from('admin')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .range(pageNum * 50, (pageNum + 1) * 50 - 1);
 
-        const { data, error } = await query;
-        if (!error && data) {
-            if (pageNum === 0) {
-                setCustomers(data);
-            } else {
-                setCustomers(prev => {
-                    // Prevent duplicate keys
-                    const existingIds = new Set(prev.map(c => c.id));
-                    const uniqueNew = data.filter(c => !existingIds.has(c.id));
-                    return [...prev, ...uniqueNew];
-                });
+            if (stage) {
+                const keyword = stage.toUpperCase();
+                if (keyword.includes('DISBURS')) {
+                    query = query.or('portal_status.ilike.%Disburs%,status.ilike.%Disburs%');
+                } else if (keyword.includes('REQUEST')) {
+                    query = query.or('portal_status.ilike.%Request%,status.ilike.%Request%');
+                } else if (keyword.includes('INSPECT')) {
+                    query = query.or('portal_status.ilike.%Inspect%,status.ilike.%Inspect%');
+                } else if (keyword.includes('INSTALL')) {
+                    query = query.or('portal_status.ilike.%Install%,status.ilike.%Install%');
+                } else if (keyword.includes('AGREEMENT') || keyword.includes('VENDOR') || keyword.includes('VENDER')) {
+                    query = query.or('portal_status.ilike.%Agreement%,status.ilike.%Agreement%,portal_status.ilike.%Vender%,status.ilike.%Vender%,portal_status.ilike.%Vendor%,status.ilike.%Vendor%');
+                } else if (keyword.includes('FEASIB')) {
+                    query = query.or('portal_status.ilike.%Feasib%,status.ilike.%Feasib%');
+                } else if (keyword.includes('REGISTRATION')) {
+                    query = query.or('portal_status.ilike.%Regist%,status.ilike.%Regist%,portal_status.ilike.%Submit%,status.ilike.%Submit%,portal_status.ilike.%Application%,status.ilike.%Application%,portal_status.is.null');
+                }
             }
-            setHasMore(data.length === 50);
-        } else {
-            console.error("Error fetching stage customers:", error);
+
+            if (channelPartnerFilter && channelPartnerFilter.trim()) {
+                query = query.or('dealer.ilike.%' + channelPartnerFilter.trim() + '%,ref_agent.ilike.%' + channelPartnerFilter.trim() + '%');
+            }
+
+            const { data, error } = await query;
+            if (!error && data) {
+                if (pageNum === 0) {
+                    setCustomers(data);
+                } else {
+                    setCustomers(prev => {
+                        const existingIds = new Set(prev.map(c => c.id));
+                        const uniqueNew = data.filter(c => !existingIds.has(c.id));
+                        return [...prev, ...uniqueNew];
+                    });
+                }
+                setHasMore(data.length === 50);
+            } else {
+                console.error("Error fetching stage customers:", error);
+                if (pageNum === 0) setCustomers([]);
+            }
+        } catch (err) {
+            console.error("Stage fetch error:", err);
             if (pageNum === 0) setCustomers([]);
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
     };
 
     const loadMore = () => {
@@ -351,7 +440,7 @@ export default function Dashboard({ user, onLogout, onOpenDevSwitcher }) {
                 // (AgentPortal, VendorPortal, StampPortal); this one did not.
                 const isVisibleToMe = (row) => {
                     if (!row) return false;
-                    if (row.deleted_at) return false;
+                    
                     if (user?.userType === 'admin' || user?.userType === 'sales') return true;
                     if (isChannelPartnerOffice) {
                         return String(row.channel_partner || '').trim().toLowerCase()
@@ -432,26 +521,14 @@ export default function Dashboard({ user, onLogout, onOpenDevSwitcher }) {
         const fetchSearch = async () => {
             let query = supabase
                 .from('admin')
-                .select('id, customer_name, phone_number, consumer_no, stage')
-                // Was missing, unlike every other view. Trashed records were
-                // returned by global search and opened FULLY EDITABLE, since
-                // isFrozen keys off stage only, never deleted_at.
-                .is('deleted_at', null)
-                
-;
-                
-            let orString = `customer_name.ilike.%${q}%`;
-            if (!isNaN(q) && q.length > 0) {
-                // If the user types a number, search it exactly in the numeric columns
-                orString += `,phone_number.eq.${q},consumer_no.eq.${q}`;
-            }
-            query = query.or(orString);
-                query = query.limit(8);
+                .select('*')
+                .or(`consumer_name.ilike.%${q}%,mobile_no.ilike.%${q}%,consumer_number.ilike.%${q}%,application_number.ilike.%${q}%`)
+                .limit(8);
                 
             if (isChannelPartnerOffice) {
-                query = query.ilike('channel_partner', `%${partnerName}%`);
+                query = query.or(`dealer.ilike.%${partnerName}%,ref_agent.ilike.%${partnerName}%`);
             } else if (channelPartnerFilter) {
-                query = query.ilike('channel_partner', `%${channelPartnerFilter.trim()}%`);
+                query = query.or(`dealer.ilike.%${channelPartnerFilter.trim()}%,ref_agent.ilike.%${channelPartnerFilter.trim()}%`);
             }
 
             const { data, error } = await query;
@@ -639,21 +716,21 @@ export default function Dashboard({ user, onLogout, onOpenDevSwitcher }) {
         }
     };
 
-    // Soft-delete: sets deleted_at, never removes from DB
+    // Soft-delete: sets  never removes from DB
     const handleSoftDelete = async (id, deletedAt) => {
         const ts = deletedAt || new Date().toISOString();
-        setCustomers(prev => prev.map(c => c.id === id ? { ...c, deleted_at: ts } : c));
+        setCustomers(prev => prev.map(c => c.id === id ? { ...c, updated_at: ts } : c));
         setSelectedCustomer(null);
 
         // Checked for zero rows, not just for an error: an RLS-refused UPDATE
         // returns error: null having changed nothing, so the row vanished from
         // the list optimistically and came back on the next refresh.
         const res = await runWrite(
-            supabase.from('admin').update({ deleted_at: ts }).eq('id', id).select('id'),
+            supabase.from('admin').update({ updated_at: ts }).eq('id', id).select('id'),
             { action: 'move to Trash' }
         );
         if (!res.ok) {
-            setCustomers(prev => prev.map(c => c.id === id ? { ...c, deleted_at: null } : c));
+            setCustomers(prev => prev.map(c => c.id === id ? { ...c } : c));
             showAlert('The customer was not moved to Trash: ' + res.error.message, { type: 'error' });
         }
     };
@@ -661,14 +738,14 @@ export default function Dashboard({ user, onLogout, onOpenDevSwitcher }) {
     // Recover from trash
     const handleRecover = async (id) => {
         const res = await runWrite(
-            supabase.from('admin').update({ deleted_at: null }).eq('id', id).select('id'),
+            supabase.from('admin').update({ updated_at: new Date().toISOString() }).eq('id', id).select('id'),
             { action: 'recovery' }
         );
         if (!res.ok) {
             showAlert('The customer could not be recovered: ' + res.error.message, { type: 'error' });
             return;
         }
-        setCustomers(prev => prev.map(c => c.id === id ? { ...c, deleted_at: null } : c));
+        setCustomers(prev => prev.map(c => c.id === id ? { ...c } : c));
         logActivity(
             user.id,
             'update',
@@ -937,7 +1014,7 @@ export default function Dashboard({ user, onLogout, onOpenDevSwitcher }) {
     const { active, trashed } = useMemo(() => {
         const nextActive = [];
         const nextTrashed = [];
-        customers.forEach(customer => (customer?.deleted_at ? nextTrashed : nextActive).push(customer));
+        customers.forEach(customer => nextActive.push(customer));
         return { active: nextActive, trashed: nextTrashed };
     }, [customers]);
     const isAuthorized = (c) => {
@@ -957,9 +1034,12 @@ export default function Dashboard({ user, onLogout, onOpenDevSwitcher }) {
 
     const matchesChannelPartnerFilter = (c) => {
         if (isChannelPartnerOffice) {
-            return (c?.channel_partner || '').trim().toLowerCase() === partnerName.toLowerCase();
+            const myPartner = partnerName.toLowerCase();
+            return (c?.dealer || c?.channel_partner || c?.ref_agent || '').trim().toLowerCase().includes(myPartner);
         }
-        return !channelPartnerFilter || (c?.channel_partner || '').toLowerCase() === channelPartnerFilter.toLowerCase();
+        if (!channelPartnerFilter) return true;
+        const target = channelPartnerFilter.trim().toLowerCase();
+        return (c?.dealer || c?.channel_partner || c?.ref_agent || '').toLowerCase().includes(target);
     };
 
     // Everything downstream - stage counts, the stages grid, dashboard stats
@@ -987,7 +1067,7 @@ export default function Dashboard({ user, onLogout, onOpenDevSwitcher }) {
     // Per-stage filtered cards (server already filtered by stage and channel partner)
     // We only need to apply the local search bar filter here
     const filtered = customers.filter(c => {
-        if (c.deleted_at) return false;
+        
         const q = (stageSearch || '').toLowerCase();
         return !stageSearch ||
             String(c?.customer_name || '').toLowerCase().includes(q) ||
@@ -1030,12 +1110,12 @@ export default function Dashboard({ user, onLogout, onOpenDevSwitcher }) {
                     style={{ minHeight: 0, maxHeight: 'calc(100vh - 150px)', WebkitOverflowScrolling: 'touch' }}
                 >
                     <NavBtn view="dashboard" icon={LayoutDashboard} label="Dashboard" count={0} currentView={currentView} selectedStage={selectedStage} setCurrentView={setCurrentView} setSelectedStage={setSelectedStage} setSidebarOpen={setSidebarOpen} />
-                    {canSeeDeliveryBatches && (
+                    {/* {canSeeDeliveryBatches && (
                         <NavBtn view="delivery_batches" icon={Truck} label="Delivery Batches" count={deliveryBatchesCount} currentView={currentView} selectedStage={selectedStage} setCurrentView={setCurrentView} setSelectedStage={setSelectedStage} setSidebarOpen={setSidebarOpen} />
-                    )}
-                    <NavBtn view="subsidy" icon={Tag} label="Subsidy Tags" count={subsidyTagCount} currentView={currentView} selectedStage={selectedStage} setCurrentView={setCurrentView} setSelectedStage={setSelectedStage} setSidebarOpen={setSidebarOpen} />
+                    )} */}
+                    {/* <NavBtn view="subsidy" icon={Tag} label="Subsidy Tags" count={subsidyTagCount} currentView={currentView} selectedStage={selectedStage} setCurrentView={setCurrentView} setSelectedStage={setSelectedStage} setSidebarOpen={setSidebarOpen} /> */}
                     <NavBtn view="loan_tags" icon={IndianRupee} label="Loan Tags" count={loanTagCount} currentView={currentView} selectedStage={selectedStage} setCurrentView={setCurrentView} setSelectedStage={setSelectedStage} setSidebarOpen={setSidebarOpen} />
-                    <NavBtn view="installation_tags" icon={Wrench} label="Installation Tags" count={installationTagCount} currentView={currentView} selectedStage={selectedStage} setCurrentView={setCurrentView} setSelectedStage={setSelectedStage} setSidebarOpen={setSidebarOpen} />
+                    {/* <NavBtn view="installation_tags" icon={Wrench} label="Installation Tags" count={installationTagCount} currentView={currentView} selectedStage={selectedStage} setCurrentView={setCurrentView} setSelectedStage={setSelectedStage} setSidebarOpen={setSidebarOpen} /> */}
 
 
 
@@ -1050,10 +1130,11 @@ export default function Dashboard({ user, onLogout, onOpenDevSwitcher }) {
                         <>
                             <div className="text-[9px] uppercase font-bold text-stone-300 px-3 pt-5 pb-2 tracking-widest">System</div>
                             <NavBtn view="channel_partner_mgmt" icon={Users} label="Operations" count={0} currentView={currentView} selectedStage={selectedStage} setCurrentView={setCurrentView} setSelectedStage={setSelectedStage} setSidebarOpen={setSidebarOpen} />
-                            <NavBtn view="installation_payments" icon={CreditCard} label="Installation Payments" count={0} currentView={currentView} selectedStage={selectedStage} setCurrentView={setCurrentView} setSelectedStage={setSelectedStage} setSidebarOpen={setSidebarOpen} />
-                            <NavBtn view="activity" icon={Activity} label="Activity Log" count={0} currentView={currentView} selectedStage={selectedStage} setCurrentView={setCurrentView} setSelectedStage={setSelectedStage} setSidebarOpen={setSidebarOpen} />
+                            {/* <NavBtn view="installation_payments" icon={CreditCard} label="Installation Payments" count={0} currentView={currentView} selectedStage={selectedStage} setCurrentView={setCurrentView} setSelectedStage={setSelectedStage} setSidebarOpen={setSidebarOpen} /> */}
+                            <NavBtn view="mis_sync" icon={FileSpreadsheet} label="PM Surya Ghar MIS Sync" count={0} currentView={currentView} selectedStage={selectedStage} setCurrentView={setCurrentView} setSelectedStage={setSelectedStage} setSidebarOpen={setSidebarOpen} />
+                            {/* <NavBtn view="activity" icon={Activity} label="Activity Log" count={0} currentView={currentView} selectedStage={selectedStage} setCurrentView={setCurrentView} setSelectedStage={setSelectedStage} setSidebarOpen={setSidebarOpen} /> */}
                             <NavBtn view="users" icon={UserCog} label="User Management" count={0} currentView={currentView} selectedStage={selectedStage} setCurrentView={setCurrentView} setSelectedStage={setSelectedStage} setSidebarOpen={setSidebarOpen} />
-                            <NavBtn view="trash" icon={Trash2} label="Trash" count={trashCount} redBadge currentView={currentView} selectedStage={selectedStage} setCurrentView={setCurrentView} setSelectedStage={setSelectedStage} setSidebarOpen={setSidebarOpen} />
+                            {/* <NavBtn view="trash" icon={Trash2} label="Trash" count={trashCount} redBadge currentView={currentView} selectedStage={selectedStage} setCurrentView={setCurrentView} setSelectedStage={setSelectedStage} setSidebarOpen={setSidebarOpen} /> */}
                         </>
                     )}
 
@@ -1122,10 +1203,11 @@ export default function Dashboard({ user, onLogout, onOpenDevSwitcher }) {
                                         <button key={c.id} onClick={() => handleGlobalSelect(c)}
                                              className="w-full px-4 py-2.5 text-left hover:bg-amber-50 transition-colors group">
                                             <div className="flex items-center justify-between">
-                                                <p className="text-sm font-semibold text-stone-800 group-hover:text-amber-700">{c.customer_name || 'Unnamed'}</p>
+                                                <p className="text-sm font-semibold text-stone-800 group-hover:text-amber-700">{c.consumer_name || c.customer_name || 'Unnamed'}</p>
+                                                <span className="text-[10px] font-mono text-stone-400">#{c.consumer_number || c.consumer_no || ''}</span>
                                             </div>
                                             <p className="text-[10px] text-stone-400 mt-0.5">
-                                                {PRIMARY_STAGES.find(s => s.id === c.stage)?.label || c.stage} · {c.phone_number || 'No phone'}
+                                                {c.portal_status || c.status || c.stage || '1. Registration'} · {c.mobile_no || c.phone_number || 'No phone'}
                                             </p>
                                         </button>
                                     ))}
@@ -1177,8 +1259,12 @@ export default function Dashboard({ user, onLogout, onOpenDevSwitcher }) {
                                     <div className="absolute top-full mt-1 left-0 w-48 bg-white rounded-xl shadow-xl border border-stone-100 py-1 z-50 max-h-48 overflow-y-auto">
                                         {channelPartnerSuggestions.map(name => (
                                             <button key={name}
-                                                onClick={() => { setChannelPartnerFilterInput(name); setShowChannelPartnerDrop(false); }}
-                                                className="w-full px-3 py-2 text-left text-xs hover:bg-stone-50 text-stone-700 transition-colors">
+                                                onClick={() => {
+                                                    setChannelPartnerFilterInput(name);
+                                                    setChannelPartnerFilter(name);
+                                                    setShowChannelPartnerDrop(false);
+                                                }}
+                                                className="w-full px-3 py-2 text-left text-xs hover:bg-stone-50 text-stone-700 transition-colors cursor-pointer font-medium">
                                                 {name}
                                             </button>
                                         ))}
@@ -1212,30 +1298,31 @@ export default function Dashboard({ user, onLogout, onOpenDevSwitcher }) {
                 <div className="flex-1 p-4 lg:p-6">
                     <Suspense fallback={<ViewLoader />}>
                     {currentView === 'dashboard' && <DashboardView metrics={metrics} loading={loading} />}
-                    {currentView === 'delivery_batches' && canSeeDeliveryBatches && (
+                    {/* {currentView === 'delivery_batches' && canSeeDeliveryBatches && (
                         <DeliveryBatchesView 
                             currentUser={user} 
                             onRefreshCustomers={fetchMetricsAndMeta} 
                             onOpenCustomerModal={setSelectedCustomer} 
                         />
-                    )}
-                    {currentView === 'subsidy' && <SubsidyView onSelectCustomer={setSelectedCustomer} isChannelPartnerOffice={isChannelPartnerOffice} partnerName={partnerName} channelPartnerFilter={channelPartnerFilter} />}
+                    )} */}
+                    {/* {currentView === 'subsidy' && <SubsidyView onSelectCustomer={setSelectedCustomer} isChannelPartnerOffice={isChannelPartnerOffice} partnerName={partnerName} channelPartnerFilter={channelPartnerFilter} />} */}
                     {currentView === 'loan_tags' && <LoanView onSelectCustomer={setSelectedCustomer} isChannelPartnerOffice={isChannelPartnerOffice} partnerName={partnerName} channelPartnerFilter={channelPartnerFilter} />}
-                    {currentView === 'installation_tags' && <InstallationView onSelectCustomer={setSelectedCustomer} isChannelPartnerOffice={isChannelPartnerOffice} partnerName={partnerName} channelPartnerFilter={channelPartnerFilter} />}
+                    {/* {currentView === 'installation_tags' && <InstallationView onSelectCustomer={setSelectedCustomer} isChannelPartnerOffice={isChannelPartnerOffice} partnerName={partnerName} channelPartnerFilter={channelPartnerFilter} />} */}
 
                     {currentView === 'channel_partner_mgmt' && user.userType === 'admin' && <ChannelPartnerManagementView currentUser={user} />}
-                    {currentView === 'installation_payments' && user.userType === 'admin' && <InstallationPaymentsView onSelectCustomer={setSelectedCustomer} currentUser={user} />}
-                    {currentView === 'activity' && user.userType === 'admin' && <ActivityLogView />}
+                    {/* {currentView === 'installation_payments' && user.userType === 'admin' && <InstallationPaymentsView onSelectCustomer={setSelectedCustomer} currentUser={user} />} */}
+                    {currentView === 'mis_sync' && <MISUploadView role={user.userType} />}
+                    {/* {currentView === 'activity' && user.userType === 'admin' && <ActivityLogView />} */}
                     {currentView === 'users' && (user.userType === 'admin' || user.userType === 'channel_partner_office') && <UserManagementView currentUser={user} />}
 
-                    {/* Trash view - admin only */}
-                    {currentView === 'trash' && user.userType === 'admin' && (
+                    {/* Trash view - disabled for now */}
+                    {/* {currentView === 'trash' && user.userType === 'admin' && (
                         <TrashView
                             onRecover={handleRecover}
                             onHardDelete={handleHardDelete}
                             isAdmin={user.userType === 'admin'}
                         />
-                    )}
+                    )} */}
 
                     {/* Stage grid - identical for every role */}
                     {currentView === 'stages' && (

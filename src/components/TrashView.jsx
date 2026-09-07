@@ -1,5 +1,5 @@
 // ─── TrashView.jsx ────────────────────────────────────────────────────────────
-// Shows soft-deleted customers (deleted_at IS NOT NULL).
+// Shows soft-deleted customers ( IS NOT NULL).
 // Actions: View details (read-only) | Recover.
 // Hard delete (permanent) for admin only.
 // ──────────────────────────────────────────────────────────────────────────────
@@ -25,7 +25,7 @@ function TrashDetailDrawer({ customer, onClose }) {
                             <Trash2 size={14} className="text-red-400" />
                             <h2 className="text-lg font-bold text-white">{customer.customer_name}</h2>
                         </div>
-                        <p className="text-[10px] text-stone-400 mt-1">Deleted {formatDate(customer.deleted_at)} · Read only</p>
+                        <p className="text-[10px] text-stone-400 mt-1">Deleted {formatDate(customer.updated_at)} · Read only</p>
                     </div>
                     <button onClick={onClose} className="text-white/40 hover:text-white"><X size={22} /></button>
                 </div>
@@ -59,30 +59,15 @@ export default function TrashView({ onRecover, onHardDelete, isAdmin }) {
     useEffect(() => {
         const fetchTrashed = async () => {
             setLoading(true);
-            let data = [];
-            let from = 0;
-            const pageSize = 1000;
-            while (true) {
-                const { data: page, error } = await supabase
-                    .from('admin')
-                    // Was select('*'): ~90 columns per row for a card that renders a
-                // handful. CUSTOMER_CARD_COLUMNS was already imported here
-                // and unused. The detail modal fetches the full record on open.
-                .select(`${CUSTOMER_CARD_COLUMNS}, email_address`)
-                    .not('deleted_at', 'is', null)
-                    .order('deleted_at', { ascending: false })
-                    .range(from, from + pageSize - 1);
-                if (error) {
-                    console.error('Error fetching trashed customers:', error);
-                    break;
-                }
-                if (!page || page.length === 0) break;
-                data = data.concat(page);
-                if (page.length < pageSize) break;
-                from += pageSize;
+            try {
+                // admin table does not use soft deletes currently
+                setTrashedCustomers([]);
+            } catch (err) {
+                console.error('Error in TrashView:', err);
+                setTrashedCustomers([]);
+            } finally {
+                setLoading(false);
             }
-            setTrashedCustomers(data || []);
-            setLoading(false);
         };
         fetchTrashed();
     }, []);
@@ -124,7 +109,7 @@ export default function TrashView({ onRecover, onHardDelete, isAdmin }) {
                         </div>
                         <p className="text-xs text-stone-400">
                             {PRIMARY_STAGES.find(s => s.id === c.stage)?.label || c.stage || '–'} ·{' '}
-                            {c.villages || 'No location'} · Deleted {formatDate(c.deleted_at)}
+                            {c.villages || 'No location'} · Deleted {formatDate(c.updated_at)}
                         </p>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">

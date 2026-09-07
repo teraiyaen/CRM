@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useRef, memo } from 'react';
-import { Zap, MapPin, User, Building2, Package, FolderOpen, ShieldCheck, Phone, Edit3, Truck, Calendar } from 'lucide-react';
-import { PRIMARY_STAGES, SUBSIDY_TAGS, SUBSIDY_TAG_COLORS } from '../constants';
+import { Zap, MapPin, User, Building2, Package, FolderOpen, ShieldCheck, Phone, Edit3, Truck, Calendar, Tag, CheckCircle2 } from 'lucide-react';
+import { PRIMARY_STAGES } from '../constants';
 
 const CustomerCard = memo(function CustomerCard({ customer, onSelect, onMoveStage, currentUser }) {
     const [showStageMenu, setShowStageMenu] = useState(false);
-    const [menuDirection, setMenuDirection] = useState('down');
     const dropdownRef = useRef(null);
 
     useEffect(() => {
@@ -16,142 +15,105 @@ const CustomerCard = memo(function CustomerCard({ customer, onSelect, onMoveStag
         return () => document.removeEventListener('mousedown', handleClick);
     }, [showStageMenu]);
 
-    const isCompleted = customer.stage === 'COMPLETED';
-    const isAdmin = currentUser?.userType === 'admin';
+    const name = customer.consumer_name || customer.customer_name || 'Unnamed Consumer';
+    const phone = customer.mobile_no || customer.phone_number || 'N/A';
+    const consumerNo = customer.consumer_number || customer.consumer_no || 'N/A';
+    const appNo = customer.application_number || '';
+    const capacity = customer.proposed_capacity_kw || customer.system_capacity_kwp || '0';
+    const panel = customer.panel_brand || customer.module_brand || 'Not Assigned';
+    const inverter = customer.inverter_brand || customer.inverter_make || '';
+    const currentStatus = customer.portal_status || customer.status || customer.stage || 'Registration';
+    const address = customer.address || customer.sub_division || customer.circle || customer.district_name || '';
+    const dealer = customer.dealer || customer.channel_partner || 'Teraiya';
+    const refAgent = customer.ref_agent || '';
+    const submittedOn = customer.submitted_on || customer.application_date || '';
 
-    const currentStageRemark = (() => {
-        if (!customer.stages_remarks) return '';
-        if (typeof customer.stages_remarks === 'object') {
-            return customer.stages_remarks[customer.stage] || '';
+    const getStatusBadgeStyle = (st) => {
+        const s = String(st).toLowerCase();
+        if (s.includes('disbursed') || s.includes('complete')) {
+            return 'bg-emerald-50 text-emerald-700 border-emerald-200';
         }
-        if (typeof customer.stages_remarks === 'string') {
-            try {
-                const parsed = JSON.parse(customer.stages_remarks);
-                if (typeof parsed === 'object' && parsed) {
-                    return parsed[customer.stage] || '';
-                }
-                return parsed || '';
-            } catch {
-                return customer.stages_remarks;
-            }
+        if (s.includes('installation')) {
+            return 'bg-amber-50 text-amber-700 border-amber-200';
         }
-        return '';
-    })();
-
-    const tagInfo   = SUBSIDY_TAGS.find(f => f.id === customer.subsidy_tag);
-    const tagColors = customer.subsidy_tag ? (SUBSIDY_TAG_COLORS[customer.subsidy_tag] || {}) : {};
+        if (s.includes('inspection')) {
+            return 'bg-indigo-50 text-indigo-700 border-indigo-200';
+        }
+        if (s.includes('agreement') || s.includes('upload')) {
+            return 'bg-blue-50 text-blue-700 border-blue-200';
+        }
+        if (s.includes('vendor') || s.includes('leads')) {
+            return 'bg-teal-50 text-teal-700 border-teal-200';
+        }
+        return 'bg-stone-100 text-stone-700 border-stone-200';
+    };
 
     return (
-        <div className={`rounded-2xl border shadow-sm hover:shadow-md transition-all border-l-4 group flex flex-col relative ${showStageMenu ? 'z-50' : 'z-10'} ${isCompleted ? 'bg-stone-50/80 border-stone-200 border-l-emerald-500' : 'bg-white border-stone-100 border-l-amber-400'} ${isCompleted && !showStageMenu ? 'opacity-80' : ''}`}>
-            {/* Clickable top section */}
-            <div className="p-5 cursor-pointer flex-1" onClick={() => onSelect(customer)}>
-                <div className="flex justify-between items-start mb-3">
-                    <h3 className="font-bold text-stone-800 group-hover:text-amber-600 transition-colors leading-tight">
-                        {customer?.customer_name || 'Unnamed Customer'}
-                    </h3>
-                    {tagInfo && (
-                        <span className={`text-[9px] px-2 py-0.5 rounded font-bold uppercase ml-2 whitespace-nowrap border ${tagColors.bg} ${tagColors.text} ${tagColors.border}`}>
-                            {tagInfo.label}
-                        </span>
-                    )}
+        <div 
+            onClick={() => onSelect && onSelect(customer)}
+            className="bg-white border border-stone-200 hover:border-amber-400 hover:shadow-md rounded-xl p-4 transition-all cursor-pointer relative group flex flex-col justify-between"
+        >
+            <div className="space-y-2.5">
+                {/* Header: Name + Stage badge */}
+                <div className="flex items-start justify-between gap-2">
+                    <div>
+                        <h4 className="font-bold text-stone-900 group-hover:text-amber-600 transition-colors line-clamp-1">
+                            {name}
+                        </h4>
+                        <div className="flex items-center gap-2 mt-0.5 text-xs text-stone-500 font-mono">
+                            <span>#{consumerNo}</span>
+                            {appNo && <span className="text-stone-400">• {appNo}</span>}
+                        </div>
+                    </div>
+                    <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border shrink-0 ${getStatusBadgeStyle(currentStatus)}`}>
+                        {currentStatus}
+                    </span>
                 </div>
-                <div className="grid grid-cols-2 gap-y-1.5 mb-3">
-                    <div className="flex items-center gap-1.5 text-xs text-stone-500 font-medium">
-                        <Zap size={11} className="text-amber-500 flex-shrink-0" />
-                        <span>{customer.system_capacity_kwp ? `${customer.system_capacity_kwp} kWp` : '–'}</span>
+
+                {/* Technical / Specs Row */}
+                <div className="grid grid-cols-2 gap-2 bg-stone-50/80 p-2.5 rounded-lg text-xs">
+                    <div>
+                        <span className="text-stone-400 text-[10px] uppercase font-semibold block">Capacity</span>
+                        <span className="font-bold text-stone-800 flex items-center gap-1 mt-0.5">
+                            <Zap className="w-3.5 h-3.5 text-amber-500" /> {capacity} kWp
+                        </span>
                     </div>
-                    <div className="flex items-center gap-1.5 text-xs text-stone-500 font-medium">
-                        <MapPin size={11} className="text-stone-300 flex-shrink-0" />
-                        <span className="truncate">{customer.villages || 'N/A'}</span>
+                    <div>
+                        <span className="text-stone-400 text-[10px] uppercase font-semibold block">Panel OEM</span>
+                        <span className="font-medium text-stone-700 truncate block mt-0.5" title={panel}>
+                            {panel}
+                        </span>
                     </div>
-                    <div className="flex items-center gap-1.5 text-xs text-stone-500 font-medium">
-                        <User size={11} className="text-stone-300 flex-shrink-0" />
-                        <span className="truncate">{customer.channel_partner || 'No Channel Partner'}</span>
+                </div>
+
+                {/* Details list */}
+                <div className="space-y-1 text-xs text-stone-600">
+                    <div className="flex items-center gap-1.5 truncate">
+                        <Phone className="w-3.5 h-3.5 text-stone-400 shrink-0" />
+                        <span>{phone}</span>
                     </div>
-                    {customer.phone_number && (
-                        <div className="flex items-center gap-1.5 text-xs text-stone-500 font-medium">
-                            <Phone size={11} className="text-stone-300 flex-shrink-0" />
-                            <span>{customer.phone_number}</span>
-                        </div>
-                    )}
-                    {customer.vendor && (
-                        <div className="flex items-center gap-1.5 text-xs text-stone-500 font-medium col-span-2">
-                            <Package size={11} className="text-stone-300 flex-shrink-0" />
-                            <span>Vendor: {customer.vendor}</span>
-                        </div>
-                    )}
-                    {customer.delivery_batch_id && (
-                        <div className="flex items-center gap-1.5 text-[11px] text-amber-800 bg-amber-50 border border-amber-200/80 rounded-lg px-2 py-0.5 col-span-2 font-bold">
-                            <Truck size={11} className="text-amber-600 flex-shrink-0" />
-                            <span className="truncate">Batch: {customer.delivery_batch_id}</span>
-                        </div>
-                    )}
-                    {customer.created_at && (
-                        <div className="flex items-center gap-1.5 text-[10px] text-stone-400 font-medium col-span-2 pt-0.5">
-                            <Calendar size={11} className="text-stone-300 flex-shrink-0" />
-                            <span>{new Date(customer.created_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}</span>
+                    {address && (
+                        <div className="flex items-center gap-1.5 truncate text-stone-500">
+                            <MapPin className="w-3.5 h-3.5 text-stone-400 shrink-0" />
+                            <span className="truncate">{address}</span>
                         </div>
                     )}
                 </div>
             </div>
 
-            {/* Bottom strip - not clickable (stops propagation via parent) */}
-            <div className="border-t border-stone-100 bg-stone-50/60 rounded-b-2xl animate-in fade-in duration-300" onClick={e => e.stopPropagation()}>
-                {/* Stage remarks preview */}
-                {currentStageRemark && (
-                    <div className="px-4 pb-3 border-t border-stone-100 pt-2">
-                        <p className="text-[10px] text-stone-500 italic leading-tight line-clamp-2">
-                            💬 {currentStageRemark}
-                        </p>
-                    </div>
+            {/* Footer */}
+            <div className="mt-3 pt-2.5 border-t border-stone-100 flex items-center justify-between text-[11px] text-stone-400">
+                <span className="truncate font-medium text-stone-600">
+                    {dealer}{refAgent ? ` • ${refAgent}` : ''}
+                </span>
+                {submittedOn && (
+                    <span className="flex items-center gap-1 text-[10px]">
+                        <Calendar className="w-3 h-3" /> {submittedOn}
+                    </span>
                 )}
-
-                {/* Stage Display Strip */}
-                <div className="px-4 pb-4 pt-2 border-t border-stone-100">
-                    <div className="relative" ref={dropdownRef}>
-                        <div className={`w-full flex items-center justify-between border rounded-xl px-3 py-2 text-xs font-bold ${isCompleted ? 'bg-emerald-50 border-emerald-200 text-emerald-600' : 'bg-stone-50 border-stone-200 text-stone-600'}`}>
-                            <div className="flex items-center gap-2 truncate">
-                                {isCompleted && <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />}
-                                <span>{PRIMARY_STAGES.find(s => s.id === customer.stage)?.label || customer.stage}</span>
-                            </div>
-                            {isAdmin && (
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        const nextShow = !showStageMenu;
-                                        setShowStageMenu(nextShow);
-                                        if (nextShow) {
-                                            const rect = e.currentTarget.getBoundingClientRect();
-                                            const spaceBelow = window.innerHeight - rect.bottom;
-                                            setMenuDirection(spaceBelow < 280 ? 'up' : 'down');
-                                        }
-                                    }}
-                                    className="p-1 text-stone-400 hover:text-amber-600 transition-colors ml-2 bg-stone-100 hover:bg-stone-200/60 rounded"
-                                    title="Admin Override Stage"
-                                >
-                                    <Edit3 className="w-3 h-3" />
-                                </button>
-                            )}
-                        </div>
-                        {showStageMenu && (
-                            <div className={`absolute left-0 right-0 bg-white rounded-xl shadow-xl border border-stone-100 py-1 z-20 max-h-64 overflow-y-auto ${menuDirection === 'up' ? 'bottom-full mb-1' : 'top-full mt-1'}`}>
-                                <div className="px-3 py-1.5 text-[9px] font-bold text-amber-700 bg-amber-50 uppercase tracking-widest border-b border-stone-100">
-                                    Admin Override
-                                </div>
-                                {PRIMARY_STAGES.map(stage => (
-                                    <button key={stage.id}
-                                        onClick={() => { onMoveStage(customer.id, stage.id); setShowStageMenu(false); }}
-                                        className={`w-full px-3 py-2 text-left text-xs flex items-center gap-2 hover:bg-stone-50 transition-colors ${customer.stage === stage.id ? 'bg-amber-50 font-bold text-amber-700' : 'text-stone-600'}`}>
-                                        <stage.icon className="w-3.5 h-3.5 text-stone-400 flex-shrink-0" />
-                                        {stage.label}
-                                    </button>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                </div>
             </div>
         </div>
     );
 });
+
 export default CustomerCard;
