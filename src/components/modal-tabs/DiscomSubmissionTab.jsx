@@ -880,7 +880,7 @@ export default function DiscomSubmissionTab({
                                         village: editData.villages || '',
                                         taluka: editData.villages || '',
                                         district: editData.sub_divisions || '',
-                                        vendorName: 'SolarFlow',
+                                        vendorName: 'Watersun Solar Energy',
                                         vendorAddress: 'Plot No 40 GIDC Estate Radhanpur',
                                         paymentTerms: 'Mutually Agreed Terms of Payment',
                                         showHighlights: true,

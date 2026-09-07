@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, User, Phone, Mail, MapPin, Zap, Building2, ShieldCheck, IndianRupee, Save, Plus } from 'lucide-react';
 import { supabase } from '../supabase';
+import { PORTAL_STATUSES } from '../constants';
 
 export default function AddLeadModal({ isOpen, onClose, onCustomerAdded, currentUser }) {
     const [saving, setSaving] = useState(false);
@@ -247,10 +248,10 @@ export default function AddLeadModal({ isOpen, onClose, onCustomerAdded, current
                         </div>
                     </div>
 
-                    {/* Technical BOM Specs */}
+                    {/* Technical Specs */}
                     <div className="pt-4 border-t border-stone-200">
                         <h3 className="text-xs font-bold text-amber-700 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                            <Zap className="w-4 h-4" /> Technical & BOM Specifications
+                            <Zap className="w-4 h-4" /> Technical Specifications
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
@@ -332,12 +333,9 @@ export default function AddLeadModal({ isOpen, onClose, onCustomerAdded, current
                                     onChange={(e) => handleChange('portal_status', e.target.value)}
                                     className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm bg-white font-medium text-stone-800 focus:ring-2 focus:ring-amber-400 focus:outline-none"
                                 >
-                                    <option value="Upload Agreement (Pending)">Upload Agreement (Pending)</option>
-                                    <option value="Installation (Pending)">Installation (Pending)</option>
-                                    <option value="Inspection (Pending)">Inspection (Pending)</option>
-                                    <option value="Subsidy Request (Pending)">Subsidy Request (Pending)</option>
-                                    <option value="Subsidy Disbursal (Disbursed)">Subsidy Disbursal (Completed)</option>
-                                    <option value="Vender Selection">Vender Selection</option>
+                                    {PORTAL_STATUSES.map(st => (
+                                        <option key={st} value={st}>{st}</option>
+                                    ))}
                                 </select>
                             </div>
                         </div>

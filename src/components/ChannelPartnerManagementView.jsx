@@ -608,9 +608,9 @@ export default function ChannelPartnerManagementView({ customers = [], currentUs
             // Map category to column in admin table
             try {
                 if (category === 'channel_partner') {
-                    try { await cascade('admin', 'dealer'); } catch (_) {}
-                    try { await cascade('admin', 'channel_partner'); } catch (_) {}
-                    try { await cascade('profiles', 'channel_partner'); } catch (_) {}
+                    try { await cascade('admin', 'dealer'); } catch (_) { /* ignore */ }
+                    try { await cascade('admin', 'channel_partner'); } catch (_) { /* ignore */ }
+                    try { await cascade('profiles', 'channel_partner'); } catch (_) { /* ignore */ }
                 } else if (category === 'module_brand') {
                     await cascade('admin', 'module_brand');
                 } else if (category === 'registration_by') {
@@ -896,7 +896,7 @@ export default function ChannelPartnerManagementView({ customers = [], currentUs
                                     </span>
                                 </button> */}
 
-                                {/* Drivers Card */}
+                                {/* Drivers Card - Commented out for now
                                 <button
                                     onClick={() => setActiveManageCategory('driver')}
                                     className="bg-white rounded-[24px] p-5 border border-stone-150 shadow-xs flex flex-col justify-between h-44 hover:shadow-md hover:border-stone-300 hover:bg-stone-50/50 active:scale-[0.98] transition-all text-left focus:outline-none w-full group"
@@ -913,7 +913,7 @@ export default function ChannelPartnerManagementView({ customers = [], currentUs
                                     <span className="text-[11px] font-bold text-stone-600 group-hover:text-amber-650 flex items-center gap-1 transition-colors duration-305">
                                         Open Manager <span className="transition-transform group-hover:translate-x-1.5 duration-305">→</span>
                                     </span>
-                                </button>
+                                </button> */}
                             </div>
                         </div>
 

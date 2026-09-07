@@ -237,7 +237,7 @@ function CreateUserModal({ onClose, onCreated, currentUser, branchOptions = [] }
     const partnerName = (currentUser?.channel_partner || currentUser?.name || '').trim();
     const initialFormState = isCP 
         ? { name: '', email: '', password: '', role: 'Channel Partner Manager', user_type: 'office2', channel_partner: partnerName }
-        : { name: '', email: '', password: '', role: 'Office', user_type: 'sales', channel_partner: '' };
+        : { name: '', email: '', password: '', role: 'Admin', user_type: 'admin', channel_partner: '' };
     const [form, setForm] = useState(initialFormState);
     const [customBranchMode, setCustomBranchMode] = useState(false);
     const [saving, setSaving] = useState(false);

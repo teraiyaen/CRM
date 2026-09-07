@@ -97,13 +97,7 @@ export default function SubsidyClaimTab({
                         type="date"
                         isEditing={isEditing} 
                     />
-                    <EditableDetailItem 
-                        label="Claim Portal Status" 
-                        field="portal_status" 
-                        value={editData.portal_status} 
-                        onChange={handleChange} 
-                        isEditing={isEditing} 
-                    />
+                    {/* Status managed in top header & stage actions */}
                 </div>
             </section>
         </div>

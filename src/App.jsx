@@ -45,9 +45,7 @@ function lazyWithRetry(componentImport) {
     });
 }
 
-const AgentPortal = lazyWithRetry(() => import('./components/AgentPortal'));
-const VendorPortal = lazyWithRetry(() => import('./components/VendorPortal'));
-// const StampPortal = lazyWithRetry(() => import('./components/StampPortal'));
+// const AgentPortal = lazyWithRetry(() => import('./components/AgentPortal'));
 const DevRoleSwitcher = import.meta.env.DEV
     ? lazyWithRetry(() => import('./components/DevRoleSwitcher'))
     : null;
@@ -280,12 +278,12 @@ export default function App() {
             <Suspense fallback={<ScreenLoader />}>
                 {!user ? (
                     <LoginScreen onLogin={(userData) => { setAuthError(''); setUser(userData); }} initialError={authError} />
-                ) : isAgent ? (
+                /* ) : isAgent ? (
                     <AgentPortal user={user} onLogout={handleLogout} onOpenDevSwitcher={import.meta.env.DEV ? () => setDevSwitcherOpen(true) : undefined} />
                 ) : isVendor ? (
                     <VendorPortal user={user} onLogout={handleLogout} onOpenDevSwitcher={import.meta.env.DEV ? () => setDevSwitcherOpen(true) : undefined} />
-                /* ) : isStamp ? (
-                    <StampPortal user={user} onLogout={handleLogout} onOpenDevSwitcher={import.meta.env.DEV ? () => setDevSwitcherOpen(true) : undefined} /> */
+                ) : isStamp ? (
+                    <StampPortal user={user} onLogout={handleLogout} onOpenDevSwitcher={import.meta.env.DEV ? () => setDevSwitcherOpen(true) : undefined} */
                 ) : (
                     <Dashboard user={user} onLogout={handleLogout} onOpenDevSwitcher={import.meta.env.DEV ? () => setDevSwitcherOpen(true) : undefined} />
                 )}

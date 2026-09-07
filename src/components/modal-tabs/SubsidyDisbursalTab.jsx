@@ -65,20 +65,7 @@ export default function SubsidyDisbursalTab({
                         type="text"
                         isEditing={isEditing} 
                     />
-                    <EditableDetailItem 
-                        label="Final Status" 
-                        field="status" 
-                        value={editData.status} 
-                        onChange={handleChange} 
-                        isEditing={isEditing} 
-                    />
-                    <EditableDetailItem 
-                        label="Portal Status" 
-                        field="portal_status" 
-                        value={editData.portal_status} 
-                        onChange={handleChange} 
-                        isEditing={isEditing} 
-                    />
+                    {/* Status managed in top header & stage actions */}
                     <div className="col-span-full">
                         <EditableDetailItem 
                             label="Disbursal Notes & Remarks" 

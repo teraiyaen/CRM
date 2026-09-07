@@ -318,7 +318,7 @@ export default function InstallationView({ onSelectCustomer, isChannelPartnerOff
                                             </p>
                                         </div>
                                         <div>
-                                            <p className="text-stone-400 font-bold uppercase tracking-wide">Panel BOM</p>
+                                            <p className="text-stone-400 font-bold uppercase tracking-wide">Panel Specs</p>
                                             <p className="text-xs font-semibold text-stone-800 mt-0.5 truncate" title={panelInfo}>
                                                 {panelInfo}
                                             </p>

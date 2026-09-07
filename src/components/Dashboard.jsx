@@ -27,7 +27,7 @@ const UserManagementView = lazyWithRetry(() => import('./UserManagementView'));
 const TrashView = lazyWithRetry(() => import('./TrashView'));
 const ChannelPartnerManagementView = lazyWithRetry(() => import('./ChannelPartnerManagementView'));
 const InstallationPaymentsView = lazyWithRetry(() => import('./InstallationPaymentsView'));
-const DeliveryBatchesView = lazyWithRetry(() => import('./DeliveryBatchesView'));
+// const DeliveryBatchesView = lazyWithRetry(() => import('./DeliveryBatchesView'));
 import { useGlobalPopup } from './GlobalPopup';
 import BrandMark from './BrandMark';
 
@@ -286,27 +286,30 @@ export default function Dashboard({ user, onLogout, onOpenDevSwitcher }) {
                         pendingPaymentCount++;
                     }
 
-                    const st = (row.portal_status || row.status || '').toUpperCase();
-                    if (st.includes('DISBURS') || st.includes('COMPLETE')) {
+                    const rawStatus = (row.portal_status || row.status || 'Vender Selection').trim();
+                    let matched = PRIMARY_STAGES.find(s => s.id.toLowerCase() === rawStatus.toLowerCase())?.id;
+                    
+                    if (!matched) {
+                        const sUp = rawStatus.toUpperCase();
+                        if (sUp === 'COMPLETE') matched = 'COMPLETE';
+                        else if (sUp.includes('DISBURS') && sUp.includes('DISBURSED')) matched = 'Subsidy Disbursal (Disbursed)';
+                        else if (sUp.includes('DISBURS') && sUp.includes('PENDING')) matched = 'Subsidy Disbursal (Pending)';
+                        else if (sUp.includes('DISBURS')) matched = 'Subsidy Disbursal';
+                        else if (sUp.includes('REQUEST')) matched = 'Subsidy Request';
+                        else if (sUp.includes('INSPECT') && sUp.includes('PENDING')) matched = 'Inspection (Pending)';
+                        else if (sUp.includes('INSPECT')) matched = 'Inspection';
+                        else if (sUp.includes('INSTALL')) matched = 'Installation';
+                        else if (sUp.includes('AGREEMENT') && sUp.includes('PENDING')) matched = 'Upload Agreement (Pending)';
+                        else if (sUp.includes('AGREEMENT') || sUp.includes('UPLOAD')) matched = 'Upload Agreement';
+                        else matched = 'Vender Selection';
+                    }
+
+                    stageCounts[matched] = (stageCounts[matched] || 0) + 1;
+
+                    if (matched === 'COMPLETE' || matched.includes('Disburs')) {
                         completed++;
-                        stageCounts['SUBSIDY DISBURSAL'] = (stageCounts['SUBSIDY DISBURSAL'] || 0) + 1;
-                    } else if (st.includes('REQUEST')) {
-                        live++;
-                        stageCounts['SUBSIDY REQUEST'] = (stageCounts['SUBSIDY REQUEST'] || 0) + 1;
-                    } else if (st.includes('INSPECT')) {
-                        live++;
-                        stageCounts['INSPECTION'] = (stageCounts['INSPECTION'] || 0) + 1;
-                    } else if (st.includes('INSTALL')) {
-                        live++;
-                        stageCounts['INSTALLATION'] = (stageCounts['INSTALLATION'] || 0) + 1;
-                    } else if (st.includes('AGREEMENT') || st.includes('UPLOAD') || st.includes('VENDOR') || st.includes('VENDER')) {
-                        live++;
-                        stageCounts['UPLOAD AGREEMENT'] = (stageCounts['UPLOAD AGREEMENT'] || 0) + 1;
-                    } else if (st.includes('FEASIB')) {
-                        live++;
-                        stageCounts['FEASIBILITY'] = (stageCounts['FEASIBILITY'] || 0) + 1;
                     } else {
-                        stageCounts['REGISTRATION'] = (stageCounts['REGISTRATION'] || 0) + 1;
+                        live++;
                     }
                 });
             }
@@ -322,7 +325,7 @@ export default function Dashboard({ user, onLogout, onOpenDevSwitcher }) {
                 cashCount: cashCount,
                 pendingPaymentCount: pendingPaymentCount,
                 subsidyTagCount: completed,
-                installationTagCount: stageCounts['INSTALLATION'] || 0,
+                installationTagCount: stageCounts['Installation'] || 0,
                 deliveryBatchesCount: 0
             });
         } catch (err) {
@@ -330,8 +333,21 @@ export default function Dashboard({ user, onLogout, onOpenDevSwitcher }) {
         }
     };
 
-    const fetchStageCustomers = async (stage = selectedStage, pageNum = 0) => {
-        setLoading(true);
+    const stageCacheRef = useRef(new Map());
+
+    const fetchStageCustomers = async (stage = selectedStage, pageNum = 0, force = false) => {
+        const cacheKey = `${stage}_${channelPartnerFilter || 'ALL'}`;
+        
+        // Instant display from cache on page 0
+        if (pageNum === 0 && !force && stageCacheRef.current.has(cacheKey)) {
+            const cached = stageCacheRef.current.get(cacheKey);
+            setCustomers(cached);
+            setLoading(false);
+            setHasMore(cached.length === 50);
+        } else if (pageNum === 0 && !stageCacheRef.current.has(cacheKey)) {
+            setLoading(true);
+        }
+
         try {
             let query = supabase
                 .from('admin')
@@ -340,21 +356,10 @@ export default function Dashboard({ user, onLogout, onOpenDevSwitcher }) {
                 .range(pageNum * 50, (pageNum + 1) * 50 - 1);
 
             if (stage) {
-                const keyword = stage.toUpperCase();
-                if (keyword.includes('DISBURS')) {
-                    query = query.or('portal_status.ilike.%Disburs%,status.ilike.%Disburs%');
-                } else if (keyword.includes('REQUEST')) {
-                    query = query.or('portal_status.ilike.%Request%,status.ilike.%Request%');
-                } else if (keyword.includes('INSPECT')) {
-                    query = query.or('portal_status.ilike.%Inspect%,status.ilike.%Inspect%');
-                } else if (keyword.includes('INSTALL')) {
-                    query = query.or('portal_status.ilike.%Install%,status.ilike.%Install%');
-                } else if (keyword.includes('AGREEMENT') || keyword.includes('VENDOR') || keyword.includes('VENDER')) {
-                    query = query.or('portal_status.ilike.%Agreement%,status.ilike.%Agreement%,portal_status.ilike.%Vender%,status.ilike.%Vender%,portal_status.ilike.%Vendor%,status.ilike.%Vendor%');
-                } else if (keyword.includes('FEASIB')) {
-                    query = query.or('portal_status.ilike.%Feasib%,status.ilike.%Feasib%');
-                } else if (keyword.includes('REGISTRATION')) {
-                    query = query.or('portal_status.ilike.%Regist%,status.ilike.%Regist%,portal_status.ilike.%Submit%,status.ilike.%Submit%,portal_status.ilike.%Application%,status.ilike.%Application%,portal_status.is.null');
+                if (stage === 'Vender Selection') {
+                    query = query.or('portal_status.eq."Vender Selection",status.eq."Vender Selection",portal_status.ilike.%Vender%,status.ilike.%Vender%,portal_status.ilike.%Vendor%,status.ilike.%Vendor%,portal_status.ilike.%Regist%,status.ilike.%Regist%,portal_status.is.null');
+                } else {
+                    query = query.or(`portal_status.eq."${stage}",status.eq."${stage}"`);
                 }
             }
 
@@ -366,6 +371,7 @@ export default function Dashboard({ user, onLogout, onOpenDevSwitcher }) {
             if (!error && data) {
                 if (pageNum === 0) {
                     setCustomers(data);
+                    stageCacheRef.current.set(cacheKey, data);
                 } else {
                     setCustomers(prev => {
                         const existingIds = new Set(prev.map(c => c.id));
@@ -376,11 +382,11 @@ export default function Dashboard({ user, onLogout, onOpenDevSwitcher }) {
                 setHasMore(data.length === 50);
             } else {
                 console.error("Error fetching stage customers:", error);
-                if (pageNum === 0) setCustomers([]);
+                if (pageNum === 0 && !stageCacheRef.current.has(cacheKey)) setCustomers([]);
             }
         } catch (err) {
             console.error("Stage fetch error:", err);
-            if (pageNum === 0) setCustomers([]);
+            if (pageNum === 0 && !stageCacheRef.current.has(cacheKey)) setCustomers([]);
         } finally {
             setLoading(false);
         }
@@ -392,11 +398,22 @@ export default function Dashboard({ user, onLogout, onOpenDevSwitcher }) {
         fetchStageCustomers(selectedStage, nextPage);
     };
 
+    // Load metadata once on mount
+    useEffect(() => {
+        fetchMetadata();
+    }, []);
+
+    // Refresh metrics on mount and when filter changes
+    useEffect(() => {
+        stageCacheRef.current.clear();
+        fetchMetricsAndMeta(true);
+    }, [channelPartnerFilter, isChannelPartnerOffice, partnerName]);
+
+    // Fetch stage data when stage or filter changes
     useEffect(() => {
         setPage(0);
-        fetchMetricsAndMeta();
         fetchStageCustomers(selectedStage, 0);
-    }, [selectedStage, channelPartnerFilter, isChannelPartnerOffice, partnerName]);
+    }, [selectedStage, channelPartnerFilter]);
 
     // Refresh when the operator returns to the tab. This is what actually keeps
     // the grid current for most people - they switch away, come back, and see

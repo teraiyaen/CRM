@@ -49,20 +49,7 @@ export default function InspectionTab({
                         isMoney={true}
                         isEditing={isEditing} 
                     />
-                    <EditableDetailItem 
-                        label="Inspection Status" 
-                        field="status" 
-                        value={editData.status} 
-                        onChange={handleChange} 
-                        isEditing={isEditing} 
-                    />
-                    <EditableDetailItem 
-                        label="Portal Status" 
-                        field="portal_status" 
-                        value={editData.portal_status} 
-                        onChange={handleChange} 
-                        isEditing={isEditing} 
-                    />
+                    {/* Status managed in top header & stage actions */}
                     <div className="col-span-full">
                         <EditableDetailItem 
                             label="Inspection Remarks" 

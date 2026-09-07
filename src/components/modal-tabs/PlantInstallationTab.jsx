@@ -24,7 +24,9 @@ export default function PlantInstallationTab({
                 const parsed = JSON.parse(saved);
                 if (parsed?.items && Array.isArray(parsed.items)) return parsed.items;
             }
-        } catch {}
+        } catch (e) {
+            // ignore local storage errors
+        }
         return template;
     });
 
@@ -39,7 +41,9 @@ export default function PlantInstallationTab({
                     return;
                 }
             }
-        } catch {}
+        } catch (e) {
+            // ignore local storage errors
+        }
         setBomItems(template);
     }, [bomType, editData?.id]);
 
@@ -54,7 +58,9 @@ export default function PlantInstallationTab({
                     items: updated
                 }));
             }
-        } catch {}
+        } catch (e) {
+            // ignore local storage errors
+        }
     };
 
     const handleAutoCalculate = () => {
@@ -156,24 +162,11 @@ export default function PlantInstallationTab({
                         type="date"
                         isEditing={isEditing} 
                     />
-                    <EditableDetailItem 
-                        label="Installation Status" 
-                        field="status" 
-                        value={editData.status} 
-                        onChange={handleChange} 
-                        isEditing={isEditing} 
-                    />
-                    <EditableDetailItem 
-                        label="Portal Status" 
-                        field="portal_status" 
-                        value={editData.portal_status} 
-                        onChange={handleChange} 
-                        isEditing={isEditing} 
-                    />
+                    {/* Status managed in top header & stage actions */}
                 </div>
             </section>
 
-            {/* Bill of Materials (BOM) Section */}
+            {/* Bill of Materials (BOM) Section - Commented out for now
             <section className="bg-white p-6 rounded-[24px] border border-stone-100 shadow-sm space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-100 pb-3">
                     <div className="flex items-center gap-2">
@@ -187,7 +180,6 @@ export default function PlantInstallationTab({
                     </div>
 
                     <div className="flex items-center gap-2.5">
-                        {/* Roof vs Shed Toggle */}
                         <div className="inline-flex p-1 bg-stone-100 rounded-xl text-xs font-bold">
                             <button
                                 type="button"
@@ -205,7 +197,6 @@ export default function PlantInstallationTab({
                             </button>
                         </div>
 
-                        {/* Print BOM */}
                         <button
                             type="button"
                             onClick={() => setShowPrintModal(true)}
@@ -216,7 +207,6 @@ export default function PlantInstallationTab({
                     </div>
                 </div>
 
-                {/* BOM Items Table */}
                 <div className="border border-stone-150 rounded-2xl overflow-hidden">
                     <div className="max-h-96 overflow-y-auto">
                         <table className="w-full text-left text-xs">
@@ -263,7 +253,6 @@ export default function PlantInstallationTab({
                 </div>
             </section>
 
-            {/* Print Modal */}
             {showPrintModal && (
                 <BomPrintModal
                     customer={editData}
@@ -273,6 +262,7 @@ export default function PlantInstallationTab({
                     onClose={() => setShowPrintModal(false)}
                 />
             )}
+            */}
         </div>
     );
 }

@@ -29,20 +29,23 @@ const CustomerCard = memo(function CustomerCard({ customer, onSelect, onMoveStag
     const submittedOn = customer.submitted_on || customer.application_date || '';
 
     const getStatusBadgeStyle = (st) => {
-        const s = String(st).toLowerCase();
-        if (s.includes('disbursed') || s.includes('complete')) {
+        const s = String(st || '').toLowerCase();
+        if (s.includes('disburs') || s.includes('complete')) {
             return 'bg-emerald-50 text-emerald-700 border-emerald-200';
         }
-        if (s.includes('installation')) {
-            return 'bg-amber-50 text-amber-700 border-amber-200';
+        if (s.includes('request')) {
+            return 'bg-purple-50 text-purple-700 border-purple-200';
         }
-        if (s.includes('inspection')) {
+        if (s.includes('inspection') || s.includes('inspect')) {
             return 'bg-indigo-50 text-indigo-700 border-indigo-200';
+        }
+        if (s.includes('installation') || s.includes('install')) {
+            return 'bg-amber-50 text-amber-700 border-amber-200';
         }
         if (s.includes('agreement') || s.includes('upload')) {
             return 'bg-blue-50 text-blue-700 border-blue-200';
         }
-        if (s.includes('vendor') || s.includes('leads')) {
+        if (s.includes('vender') || s.includes('vendor') || s.includes('regist')) {
             return 'bg-teal-50 text-teal-700 border-teal-200';
         }
         return 'bg-stone-100 text-stone-700 border-stone-200';
@@ -96,6 +99,12 @@ const CustomerCard = memo(function CustomerCard({ customer, onSelect, onMoveStag
                         <div className="flex items-center gap-1.5 truncate text-stone-500">
                             <MapPin className="w-3.5 h-3.5 text-stone-400 shrink-0" />
                             <span className="truncate">{address}</span>
+                        </div>
+                    )}
+                    {customer.remarks && (
+                        <div className="flex items-center gap-1.5 text-[11px] text-amber-800 bg-amber-50/80 px-2 py-0.5 rounded-md border border-amber-100 truncate">
+                            <span className="font-bold shrink-0">Note:</span>
+                            <span className="truncate">{customer.remarks}</span>
                         </div>
                     )}
                 </div>

@@ -41,37 +41,7 @@ export default function FeasibilityTab({
                         type="number"
                         isEditing={isEditing} 
                     />
-                    <div className="bg-stone-50 p-2.5 rounded-xl">
-                        <p className="text-[9px] text-stone-400 uppercase tracking-wide mb-1 font-bold">Capacity Reverification</p>
-                        {isEditing ? (
-                            <select 
-                                value={editData.is_reverified ? "true" : "false"} 
-                                onChange={e => handleChange("is_reverified", e.target.value === "true")}
-                                className="w-full bg-white border border-stone-200 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-amber-300"
-                            >
-                                <option value="true">Reverified (Approved)</option>
-                                <option value="false">Pending Reverification</option>
-                            </select>
-                        ) : (
-                            <span className={`inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-md ${editData.is_reverified ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
-                                {editData.is_reverified ? "Reverified" : "Pending Reverification"}
-                            </span>
-                        )}
-                    </div>
-                    <EditableDetailItem 
-                        label="DISCOM Status" 
-                        field="status" 
-                        value={editData.status} 
-                        onChange={handleChange} 
-                        isEditing={isEditing} 
-                    />
-                    <EditableDetailItem 
-                        label="Portal Status" 
-                        field="portal_status" 
-                        value={editData.portal_status} 
-                        onChange={handleChange} 
-                        isEditing={isEditing} 
-                    />
+                    {/* Feasibility Specific Fields */}
                     <div className="col-span-full">
                         <EditableDetailItem 
                             label="Feasibility Remarks" 

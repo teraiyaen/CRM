@@ -9,18 +9,51 @@ import {
 } from 'lucide-react';
 
 export const PRIMARY_STAGES = [
-    { id: 'REGISTRATION', label: '1. Registration & Application', icon: ClipboardList },
-    { id: 'FEASIBILITY', label: '2. Feasibility Approval', icon: ClipboardCheck },
-    { id: 'UPLOAD AGREEMENT', label: '3. Vendor & Agreement', icon: Send },
-    { id: 'INSTALLATION', label: '4. Plant Installation', icon: Wrench },
-    { id: 'INSPECTION', label: '5. Inspection & Net Metering', icon: Gauge },
-    { id: 'SUBSIDY REQUEST', label: '6. Subsidy Claim', icon: Tag },
-    { id: 'SUBSIDY DISBURSAL', label: '7. Subsidy Disbursed (DBT)', icon: CheckCircle2 },
+    { id: 'Vender Selection', label: '1. Vender Selection', icon: ClipboardList, color: 'teal' },
+    { id: 'Upload Agreement (Pending)', label: '2. Upload Agreement (Pending)', icon: Send, color: 'blue' },
+    { id: 'Upload Agreement', label: '3. Upload Agreement', icon: Send, color: 'blue' },
+    { id: 'Installation', label: '4. Installation', icon: Wrench, color: 'amber' },
+    { id: 'Inspection (Pending)', label: '5. Inspection (Pending)', icon: Gauge, color: 'indigo' },
+    { id: 'Inspection', label: '6. Inspection', icon: Gauge, color: 'indigo' },
+    { id: 'Subsidy Request', label: '7. Subsidy Request', icon: Tag, color: 'purple' },
+    { id: 'Subsidy Disbursal (Pending)', label: '8. Subsidy Disbursal (Pending)', icon: CheckCircle2, color: 'emerald' },
+    { id: 'Subsidy Disbursal', label: '9. Subsidy Disbursal', icon: CheckCircle2, color: 'emerald' },
+    { id: 'Subsidy Disbursal (Disbursed)', label: '10. Subsidy Disbursal (Disbursed)', icon: CheckCircle2, color: 'emerald' },
+    { id: 'COMPLETE', label: '11. COMPLETE', icon: CheckCircle2, color: 'emerald' },
 ];
 
 export const STAGE_IDS = Object.fromEntries(
-    PRIMARY_STAGES.map(s => [s.id.replace(/ /g, "_"), s.id])
+    PRIMARY_STAGES.map(s => [s.id.replace(/[^a-zA-Z0-9]/g, "_").toUpperCase(), s.id])
 );
+
+// All 11 unique portal statuses in exact lifecycle order
+export const PORTAL_STATUSES = [
+    'Vender Selection',
+    'Upload Agreement (Pending)',
+    'Upload Agreement',
+    'Installation',
+    'Inspection (Pending)',
+    'Inspection',
+    'Subsidy Request',
+    'Subsidy Disbursal (Pending)',
+    'Subsidy Disbursal',
+    'Subsidy Disbursal (Disbursed)',
+    'COMPLETE'
+];
+
+export const PORTAL_STATUS_COLORS = {
+    'Vender Selection':              { bg: 'bg-teal-50',    text: 'text-teal-700',    border: 'border-teal-200',    dot: 'bg-teal-500' },
+    'Upload Agreement (Pending)':     { bg: 'bg-blue-50',    text: 'text-blue-700',    border: 'border-blue-200',    dot: 'bg-blue-400' },
+    'Upload Agreement':              { bg: 'bg-blue-50',    text: 'text-blue-700',    border: 'border-blue-200',    dot: 'bg-blue-500' },
+    'Installation':                  { bg: 'bg-amber-50',   text: 'text-amber-700',   border: 'border-amber-200',   dot: 'bg-amber-500' },
+    'Inspection (Pending)':          { bg: 'bg-indigo-50',  text: 'text-indigo-700',  border: 'border-indigo-200',  dot: 'bg-indigo-400' },
+    'Inspection':                    { bg: 'bg-indigo-50',  text: 'text-indigo-700',  border: 'border-indigo-200',  dot: 'bg-indigo-500' },
+    'Subsidy Request':               { bg: 'bg-purple-50',  text: 'text-purple-700',  border: 'border-purple-200',  dot: 'bg-purple-500' },
+    'Subsidy Disbursal (Pending)':   { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', dot: 'bg-emerald-400' },
+    'Subsidy Disbursal':             { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', dot: 'bg-emerald-500' },
+    'Subsidy Disbursal (Disbursed)': { bg: 'bg-emerald-50', text: 'text-emerald-800', border: 'border-emerald-300', dot: 'bg-emerald-600' },
+    'COMPLETE':                      { bg: 'bg-emerald-50', text: 'text-emerald-800', border: 'border-emerald-300', dot: 'bg-emerald-600' },
+};
 
 // `isFinal: true` marks the terminal value for a tag — reaching it locks the
 // record. Order here is the order shown in the UI.
@@ -68,7 +101,7 @@ export const META_CATEGORIES = ['payment_type', 'module_brand', 'payment_method_
 
 export const APP_ROLES = [
     { id: 'admin', label: 'Admin', user_type: 'admin', role: 'Admin' },
-    { id: 'office', label: 'Office', user_type: 'sales', role: 'Office' },
+    // { id: 'office', label: 'Office', user_type: 'sales', role: 'Office' },
     // { id: 'channel_partner', label: 'Channel Partners', user_type: 'agent', role: 'Channel Partners' },
     // { id: 'vendor', label: 'Vendors', user_type: 'vendor', role: 'Vendors' },
     // { id: 'stamp', label: 'Stamp Guy', user_type: 'stamp', role: 'Stamp' },

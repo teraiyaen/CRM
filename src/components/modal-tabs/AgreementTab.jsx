@@ -18,7 +18,7 @@ export default function AgreementTab({
             <section className="bg-white p-6 rounded-[24px] border border-stone-100 shadow-sm space-y-4">
                 <div className="flex items-center justify-between border-b border-stone-100 pb-2 mb-1">
                     <h3 className="text-xs font-bold text-stone-800 uppercase tracking-widest flex items-center gap-2">
-                        <Send size={14} className="text-amber-500" /> Tripartite Agreement & Dealer Details
+                        <Send size={14} className="text-amber-500" /> Tripartite Agreement & Payment Charges
                     </h3>
                     <div className="flex items-center gap-2">
                         {onGenerateAgreement && (
@@ -46,21 +46,6 @@ export default function AgreementTab({
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
-                    <EditableDetailItem 
-                        label="Dealer / Channel Partner *" 
-                        field="dealer" 
-                        value={editData.dealer} 
-                        onChange={handleChange} 
-                        channel_partners={channel_partners}
-                        isEditing={isEditing} 
-                    />
-                    <EditableDetailItem 
-                        label="Referral Agent" 
-                        field="ref_agent" 
-                        value={editData.ref_agent} 
-                        onChange={handleChange} 
-                        isEditing={isEditing} 
-                    />
                     <EditableDetailItem 
                         label="Agreement Submit Date" 
                         field="submitted_on" 
@@ -93,20 +78,7 @@ export default function AgreementTab({
                         isMoney={true}
                         isEditing={isEditing} 
                     />
-                    <EditableDetailItem 
-                        label="Portal Status" 
-                        field="portal_status" 
-                        value={editData.portal_status} 
-                        onChange={handleChange} 
-                        isEditing={isEditing} 
-                    />
-                    <EditableDetailItem 
-                        label="Agreement Status" 
-                        field="status" 
-                        value={editData.status} 
-                        onChange={handleChange} 
-                        isEditing={isEditing} 
-                    />
+                    {/* Status managed in top header & stage actions */}
                 </div>
             </section>
         </div>

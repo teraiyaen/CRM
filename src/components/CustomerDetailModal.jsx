@@ -52,13 +52,12 @@ export default function CustomerDetailModal({ customer, onClose, onUpdate, onDel
     const [activeTab, setActiveTab] = useState(() => {
         if (defaultTab) return defaultTab;
         const rawStage = (customer?.portal_status || customer?.status || customer?.stage || "").trim().toUpperCase();
-        if (rawStage.includes("FEASIBILITY")) return "FEASIBILITY";
-        if (rawStage.includes("AGREEMENT") || rawStage.includes("UPLOAD")) return "UPLOAD AGREEMENT";
-        if (rawStage.includes("INSTALLATION")) return "INSTALLATION";
-        if (rawStage.includes("INSPECTION")) return "INSPECTION";
-        if (rawStage.includes("REQUEST")) return "SUBSIDY REQUEST";
         if (rawStage.includes("DISBURS") || rawStage.includes("COMPLETE")) return "SUBSIDY DISBURSAL";
-        return "REGISTRATION";
+        if (rawStage.includes("REQUEST")) return "SUBSIDY REQUEST";
+        if (rawStage.includes("INSPECTION") || rawStage.includes("INSPECT")) return "INSPECTION";
+        if (rawStage.includes("INSTALLATION") || rawStage.includes("INSTALL")) return "INSTALLATION";
+        if (rawStage.includes("AGREEMENT") || rawStage.includes("UPLOAD")) return "UPLOAD AGREEMENT";
+        return "VENDER SELECTION";
     });
 
     const [editingSection, setEditingSection] = useState(null);
@@ -191,12 +190,10 @@ export default function CustomerDetailModal({ customer, onClose, onUpdate, onDel
         const issues = [];
         const requireField = (condition, label) => { if (!condition) issues.push(label); };
 
-        if (activeTab === "REGISTRATION") {
+        if (activeTab === "VENDER SELECTION" || activeTab === "REGISTRATION") {
             requireField(editData.consumer_name?.trim(), "Consumer Name");
             requireField(editData.consumer_number?.toString().trim(), "Consumer Number");
             requireField(editData.mobile_no?.toString().trim(), "Mobile Number");
-        } else if (activeTab === "FEASIBILITY") {
-            requireField(editData.proposed_capacity_kw, "Proposed Capacity (kWp)");
         } else if (activeTab === "UPLOAD AGREEMENT") {
             requireField(editData.dealer?.trim(), "Dealer / Channel Partner");
         } else if (activeTab === "INSTALLATION") {
@@ -418,7 +415,7 @@ export default function CustomerDetailModal({ customer, onClose, onUpdate, onDel
 
     const displayName = editData.consumer_name || editData.customer_name || customer.consumer_name || customer.customer_name || "Consumer Details";
     const displayConsumerNo = editData.consumer_number || editData.consumer_no || customer.consumer_number || customer.consumer_no || "N/A";
-    const currentStageStatus = editData.portal_status || editData.status || "REGISTRATION";
+    const currentStageStatus = editData.portal_status || editData.status || "VENDER SELECTION";
 
     return (
         <div className="fixed inset-0 bg-stone-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -495,17 +492,30 @@ export default function CustomerDetailModal({ customer, onClose, onUpdate, onDel
                                     <label className="text-[9px] text-stone-400 font-bold uppercase mb-1.5 block">Current Stage Status</label>
                                     <div className="text-xs text-stone-850 font-bold px-3 py-1.5 bg-stone-50 border border-stone-200/80 rounded-xl inline-flex items-center gap-1.5">
                                         <CheckCircle2 size={13} className="text-amber-500" />
-                                        {PRIMARY_STAGES.find(s => s.id === currentStageStatus)?.label || currentStageStatus}
+                                        {editData.portal_status || PRIMARY_STAGES.find(s => s.id === currentStageStatus)?.label || currentStageStatus}
                                     </div>
                                 </div>
                             </div>
 
                             <div className="p-4 rounded-2xl border border-stone-100 bg-white shadow-xs flex flex-col justify-between">
                                 <div>
-                                    <label className="text-[9px] text-stone-400 font-bold uppercase mb-1.5 block">Quick Stage Note</label>
-                                    <p className="text-xs text-stone-600 font-medium truncate">
-                                        {editData.remarks ? editData.remarks.split("\n")[0] : "No remarks recorded for this application."}
-                                    </p>
+                                    <label className="text-[9px] text-stone-400 font-bold uppercase mb-1.5 flex items-center justify-between">
+                                        <span>Stage Comment / Remarks</span>
+                                        {isEditable && <span className="text-[9px] text-amber-600 font-semibold">Editable</span>}
+                                    </label>
+                                    {isEditable ? (
+                                        <input
+                                            type="text"
+                                            value={editData.remarks || ''}
+                                            onChange={e => handleChange('remarks', e.target.value)}
+                                            placeholder="Type stage remarks / comment here..."
+                                            className="w-full text-xs font-semibold text-stone-800 bg-stone-50 border border-stone-200 rounded-xl px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-amber-400 placeholder:text-stone-400"
+                                        />
+                                    ) : (
+                                        <p className="text-xs text-stone-600 font-medium truncate">
+                                            {editData.remarks || "No remarks recorded for this application."}
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                         </div>
