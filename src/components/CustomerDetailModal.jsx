@@ -45,24 +45,34 @@ const getChangedFields = (draft = {}, saved = {}) => {
     return changed;
 };
 
+const UNIFIED_TABS = [
+    { id: 'basic', label: 'Basic Info', icon: User },
+    { id: 'technical', label: 'Technical & Plant', icon: Zap },
+    { id: 'finance', label: 'Loan & Subsidy', icon: IndianRupee },
+    { id: 'logs', label: 'Remarks & Logs', icon: History },
+];
+
+const mapToUnifiedTab = (raw) => {
+    const t = String(raw || '').toLowerCase();
+    if (t === 'basic' || t === 'technical' || t === 'finance' || t === 'logs') return t;
+    if (t.includes('loan') || t.includes('subsid') || t.includes('pay') || t.includes('claim') || t.includes('disburs') || t.includes('cash')) {
+        return 'finance';
+    }
+    if (t.includes('install') || t.includes('plant') || t.includes('tech') || t.includes('feas') || t.includes('inspect') || t.includes('meter')) {
+        return 'technical';
+    }
+    if (t.includes('log') || t.includes('hist') || t.includes('note') || t.includes('remark')) {
+        return 'logs';
+    }
+    return 'basic';
+};
+
 export default function CustomerDetailModal({ customer, onClose, onUpdate, onDelete, user, meta, channel_partners = [], defaultTab }) {
     const { showAlert, showConfirm } = useGlobalPopup();
     
-    // Determine active tab based on defaultTab or customer stage/status
-    const [activeTab, setActiveTab] = useState(() => {
-        if (defaultTab) return defaultTab;
-        const rawStage = (customer?.portal_status || customer?.status || customer?.stage || "").trim();
-        const matched = PRIMARY_STAGES.find(s => s.id.toLowerCase() === rawStage.toLowerCase());
-        if (matched && matched.id !== 'ALL') return matched.id;
+    // Determine active tab based on defaultTab or fallback to 'basic'
+    const [activeTab, setActiveTab] = useState(() => mapToUnifiedTab(defaultTab));
 
-        const upper = rawStage.toUpperCase();
-        if (upper.includes("DISBURS") || upper.includes("COMPLETE")) return "Subsidy Disbursal";
-        if (upper.includes("REQUEST")) return "Subsidy Request";
-        if (upper.includes("INSPECTION") || upper.includes("INSPECT")) return "Inspection";
-        if (upper.includes("INSTALLATION") || upper.includes("INSTALL")) return "Installation";
-        if (upper.includes("AGREEMENT") || upper.includes("UPLOAD")) return "Upload Agreement";
-        return "Vender Selection";
-    });
 
     const [editingSection, setEditingSection] = useState(null);
     const [isFormDirty, setIsFormDirty] = useState(false);
@@ -142,15 +152,22 @@ export default function CustomerDetailModal({ customer, onClose, onUpdate, onDel
 
     const fetchLogs = useCallback(async () => {
         try {
-            const custName = customer.consumer_name || customer.customer_name || "";
+            if (!customer?.id) return;
+            const custName = (customer.consumer_name || customer.customer_name || "").trim();
+            const custNo = (customer.consumer_number || customer.consumer_no || "").trim();
+            let filters = [`customer_id.eq.${customer.id}`, `new_value.eq.${customer.id}`];
+            if (custName) filters.push(`message.ilike.%${custName}%`);
+            if (custNo) filters.push(`message.ilike.%${custNo}%`);
+
             const { data, error } = await supabase.from("activity_log").select("*, profiles(name)")
-                .or(`new_value.eq.${customer.id},message.ilike.%${custName}%`)
-                .order("created_at", { ascending: false }).limit(25);
+                .or(filters.join(','))
+                .order("created_at", { ascending: false }).limit(50);
             if (!error && data) setActivityLogs(data);
-        } catch {
-            // activity_log table not yet in Supabase
+        } catch (err) {
+            console.warn("Could not load customer activity logs:", err);
         }
-    }, [customer.id, customer.consumer_name, customer.customer_name]);
+    }, [customer?.id, customer?.consumer_name, customer?.customer_name, customer?.consumer_number, customer?.consumer_no]);
+
 
     useEffect(() => {
         fetchLogs();
@@ -183,29 +200,32 @@ export default function CustomerDetailModal({ customer, onClose, onUpdate, onDel
         return result;
     };
 
-    // Stage advance calculation
-    const stageTabs = PRIMARY_STAGES.filter(s => s.id !== "ALL");
-    const currentIdx = stageTabs.findIndex(s => s.id === activeTab);
-    const hasNextStage = currentIdx >= 0 && currentIdx < stageTabs.length - 1;
-    const nextStageId = hasNextStage ? stageTabs[currentIdx + 1].id : null;
-    const nextStageLabel = hasNextStage ? stageTabs[currentIdx + 1].label : "";
+    // Stage advance calculation based on customer's current workflow stage (portal_status / status)
+    const validStages = PRIMARY_STAGES.filter(s => s.id !== "ALL");
+    const currentStageStatus = editData.portal_status || editData.status || "VENDER SELECTION";
+    const foundStageIdx = validStages.findIndex(s => s.id.toUpperCase() === String(currentStageStatus).toUpperCase());
+    const hasNextStage = foundStageIdx >= 0 && foundStageIdx < validStages.length - 1;
+    const nextStageId = hasNextStage ? validStages[foundStageIdx + 1].id : null;
+    const nextStageLabel = hasNextStage ? validStages[foundStageIdx + 1].label : "";
 
     const getMissingStageRequirements = () => {
         const issues = [];
         const requireField = (condition, label) => { if (!condition) issues.push(label); };
 
-        if (activeTab === "VENDER SELECTION" || activeTab === "REGISTRATION") {
+        const statusUpper = String(currentStageStatus).toUpperCase();
+        if (statusUpper.includes("VENDER") || statusUpper.includes("REGISTRATION")) {
             requireField(editData.consumer_name?.trim(), "Consumer Name");
             requireField(editData.consumer_number?.toString().trim(), "Consumer Number");
             requireField(editData.mobile_no?.toString().trim(), "Mobile Number");
-        } else if (activeTab === "UPLOAD AGREEMENT") {
+        } else if (statusUpper.includes("AGREEMENT")) {
             requireField(editData.dealer?.trim(), "Dealer / Channel Partner");
-        } else if (activeTab === "INSTALLATION") {
+        } else if (statusUpper.includes("INSTALLATION")) {
             requireField(editData.panel_brand?.trim(), "Panel Brand");
             requireField(editData.inverter_brand?.trim(), "Inverter Brand");
         }
         return issues;
     };
+
 
     const showMissingRequirements = (issues) => {
         setValidationIssues(issues);
@@ -419,7 +439,7 @@ export default function CustomerDetailModal({ customer, onClose, onUpdate, onDel
 
     const displayName = editData.consumer_name || editData.customer_name || customer.consumer_name || customer.customer_name || "Consumer Details";
     const displayConsumerNo = editData.consumer_number || editData.consumer_no || customer.consumer_number || customer.consumer_no || "N/A";
-    const currentStageStatus = editData.portal_status || editData.status || "VENDER SELECTION";
+
 
     return (
         <div className="fixed inset-0 bg-stone-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -463,12 +483,9 @@ export default function CustomerDetailModal({ customer, onClose, onUpdate, onDel
                     </div>
                 </div>
 
-                {/* 7 Stage Navigation Tabs */}
-                <div className="flex bg-stone-900 px-6 gap-5 border-t border-white/5 flex-shrink-0 overflow-x-auto scrollbar-none whitespace-nowrap">
-                    {[
-                        ...stageTabs.map(s => ({ id: s.id, label: s.label, icon: s.icon })),
-                        { id: "history", label: "Notes & Remarks", icon: History },
-                    ].map(tab => (
+                {/* 4 Clean Unified Navigation Tabs */}
+                <div className="flex bg-stone-900 px-6 gap-6 border-t border-white/5 flex-shrink-0 overflow-x-auto scrollbar-none whitespace-nowrap">
+                    {UNIFIED_TABS.map(tab => (
                         <button 
                             key={tab.id} 
                             onClick={async () => {
@@ -479,9 +496,9 @@ export default function CustomerDetailModal({ customer, onClose, onUpdate, onDel
                                 setActiveTab(tab.id); 
                                 setEditingSection(null);
                             }}
-                            className={`flex items-center gap-2 py-3 text-[10px] font-bold uppercase tracking-widest transition-all border-b-2 flex-shrink-0 cursor-pointer ${activeTab === tab.id ? "text-amber-400 border-amber-400" : "text-stone-500 border-transparent hover:text-stone-300"}`}
+                            className={`flex items-center gap-2 py-3.5 text-xs font-bold uppercase tracking-wider transition-all border-b-2 flex-shrink-0 cursor-pointer ${activeTab === tab.id ? "text-amber-400 border-amber-400" : "text-stone-400 border-transparent hover:text-stone-200"}`}
                         >
-                            <tab.icon size={12} /> {tab.label}
+                            <tab.icon size={14} /> {tab.label}
                         </button>
                     ))}
                 </div>
@@ -489,7 +506,8 @@ export default function CustomerDetailModal({ customer, onClose, onUpdate, onDel
                 {/* Modal Body */}
                 <div className="flex-1 min-h-0 overflow-y-auto p-6 bg-[#FCFBFA]">
                     {/* Primary Stage Overview Banner */}
-                    {activeTab !== "history" && (
+                    {activeTab !== "logs" && activeTab !== "history" && (
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                             <div className="p-4 rounded-2xl border border-stone-100 bg-white shadow-xs flex flex-col justify-between">
                                 <div>

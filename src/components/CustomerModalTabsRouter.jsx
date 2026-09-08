@@ -1,60 +1,36 @@
 import React from 'react';
-import { STAGE_IDS } from "../constants";
 import RegistrationTab from './modal-tabs/RegistrationTab';
-import FeasibilityTab from './modal-tabs/FeasibilityTab';
-import AgreementTab from './modal-tabs/AgreementTab';
 import PlantInstallationTab from './modal-tabs/PlantInstallationTab';
-import InspectionTab from './modal-tabs/InspectionTab';
 import SubsidyClaimTab from './modal-tabs/SubsidyClaimTab';
-import SubsidyDisbursalTab from './modal-tabs/SubsidyDisbursalTab';
 import HistoryTab from './modal-tabs/HistoryTab';
 
 export default function CustomerModalTabsRouter(props) {
     const { activeTab } = props;
-    const tab = String(activeTab || '').trim().toUpperCase();
+    const tab = String(activeTab || '').trim().toLowerCase();
 
-    // Stage 1: Vender Selection & Registration
-    if (tab.includes('VENDER') || tab.includes('VENDOR') || tab.includes('REGISTRATION') || tab.includes('LEADS')) {
+    // 1. Basic Info (CRM, Contacts, Grid, Channel Partner, Agreement)
+    if (tab === 'basic' || tab.includes('reg') || tab.includes('vender') || tab.includes('vendor') || tab.includes('lead') || tab.includes('agreement')) {
         return <RegistrationTab {...props} />;
     }
 
-    // Stages 2 & 3: Upload Agreement (Pending & Final)
-    if (tab.includes('AGREEMENT')) {
-        return <AgreementTab {...props} />;
-    }
-
-    // Stage 4: Rooftop Plant Installation
-    if (tab.includes('INSTALLATION') || tab.includes('INSTALL')) {
+    // 2. Technical & Plant (Solar Panels, Inverters, Capacity, Roof/Shed BOM, Milestones)
+    if (tab === 'technical' || tab.includes('plant') || tab.includes('install') || tab.includes('feas') || tab.includes('inspect') || tab.includes('meter')) {
         return <PlantInstallationTab {...props} />;
     }
 
-    // Stages 5 & 6: Inspection (Pending & Final) & Net Metering
-    if (tab.includes('INSPECT') || tab.includes('METER')) {
-        return <InspectionTab {...props} />;
-    }
-
-    // Stage 7: Subsidy Request / Claim
-    if (tab === 'SUBSIDY REQUEST' || tab.includes('REQUEST') || tab.includes('CLAIM') || tab === 'LOAN' || tab === 'CASH') {
+    // 3. Loan & Subsidy (Financing, Tranches, Project Costs, PM Surya Ghar DBT)
+    if (tab === 'finance' || tab.includes('loan') || tab.includes('subsid') || tab.includes('pay') || tab.includes('claim') || tab.includes('disburs') || tab.includes('cash')) {
         return <SubsidyClaimTab {...props} />;
     }
 
-    // Stages 8, 9, 10, 11: Subsidy Disbursal (Pending, Disbursal, Disbursed, COMPLETE)
-    if (tab.includes('DISBURS') || tab.includes('COMPLETE') || tab.includes('DBT')) {
-        return <SubsidyDisbursalTab {...props} />;
-    }
-
-    // Technical Feasibility Approval
-    if (tab.includes('FEASIBILITY')) {
-        return <FeasibilityTab {...props} />;
-    }
-
-    // Notes & Remarks / History Tab
-    if (tab.includes('HISTORY') || tab.includes('NOTE') || tab.includes('REMARK')) {
+    // 4. Remarks & Logs (Activity Log, History, Internal Notes)
+    if (tab === 'logs' || tab.includes('hist') || tab.includes('note') || tab.includes('remark')) {
         return <HistoryTab {...props} />;
     }
 
-    // Default fallback to Registration
+    // Default fallback to Basic Info
     return <RegistrationTab {...props} />;
 }
+
 
 

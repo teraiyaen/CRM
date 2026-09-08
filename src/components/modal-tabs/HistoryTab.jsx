@@ -53,33 +53,52 @@ export default function HistoryTab({
                 </div>
             </section>
 
-            {/* Detailed System History - hidden until activity_log table is added in Supabase */}
-            {/* <section>
-                <h3 className="text-[9px] font-bold text-stone-400 uppercase tracking-widest mb-6">Detailed System History</h3>
+            {/* Detailed System History & Activity Log */}
+            <section>
+                <h3 className="text-[9px] font-bold text-stone-400 uppercase tracking-widest mb-6 flex items-center gap-2">
+                    <ShieldCheck size={13} className="text-amber-500" /> Detailed System History & Activity Log
+                </h3>
                 <div className="space-y-4">
-                    {activityLogs.length > 0 ? activityLogs.map((log, i) => (
-                        <div key={i} className="relative pl-6 pb-4 border-l border-stone-100 last:border-0">
-                            <div className="absolute -left-[4.5px] top-0 w-2 h-2 rounded-full bg-white border-2 border-amber-500 shadow-sm" />
-                            <div className="bg-white p-3 rounded-xl border border-stone-100 shadow-sm -mt-1.5 hover:border-amber-200 transition-colors">
-                                <div className="flex justify-between items-start mb-1.5">
-                                    <span className={`text-[8px] px-1.5 py-0.5 rounded-full font-bold uppercase ${ACTION_COLORS[log.action] || 'bg-stone-100 text-stone-600'}`}>{log.action}</span>
-                                    <span className="text-[8px] text-stone-400 font-bold">{formatLogDate(log.created_at)}</span>
+                    {activityLogs && activityLogs.length > 0 ? (
+                        activityLogs.map((log, i) => (
+                            <div key={log.id || i} className="relative pl-6 pb-4 border-l border-stone-200 last:border-0">
+                                <div className="absolute -left-[4.5px] top-0 w-2 h-2 rounded-full bg-white border-2 border-amber-500 shadow-sm" />
+                                <div className="bg-white p-3.5 rounded-xl border border-stone-100 shadow-sm -mt-1.5 hover:border-amber-200 transition-colors">
+                                    <div className="flex justify-between items-start mb-1.5">
+                                        <span className={`text-[8px] px-2 py-0.5 rounded-full font-bold uppercase ${ACTION_COLORS[log.action] || 'bg-stone-100 text-stone-600'}`}>
+                                            {log.action}
+                                        </span>
+                                        <span className="text-[9px] text-stone-400 font-bold">
+                                            {formatLogDate(log.created_at)}
+                                        </span>
+                                    </div>
+                                    <div className="text-xs text-stone-700 font-medium whitespace-pre-wrap leading-relaxed">
+                                        {String(log?.message || '').includes('|') ? (
+                                            <div className="space-y-1">
+                                                {String(log?.message || '').split('|').map((line, idx) => (
+                                                    <div key={idx} className="flex items-center gap-1">
+                                                        <span className="text-stone-400">↳</span> {line.trim()}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            log?.message || '–'
+                                        )}
+                                    </div>
+                                    <p className="text-[8px] text-stone-400 font-bold uppercase mt-2 border-t border-stone-50 pt-1.5">
+                                        User: {log.profiles?.name || 'System'}
+                                    </p>
                                 </div>
-                                <div className="text-xs text-stone-700 font-medium whitespace-pre-wrap leading-relaxed">
-                                    {String(log?.message || '').includes('|') ? (
-                                        <div className="space-y-1">
-                                            {String(log?.message || '').split('|').map((line, idx) => (
-                                                <div key={idx} className="flex items-center gap-1"><span className="text-stone-400">↳</span> {line.trim()}</div>
-                                            ))}
-                                        </div>
-                                    ) : (log?.message || '–')}
-                                </div>
-                                <p className="text-[8px] text-stone-400 font-bold uppercase mt-2 border-t border-stone-50 pt-1.5">User: {log.profiles?.name || 'System'}</p>
                             </div>
+                        ))
+                    ) : (
+                        <div className="p-4 bg-stone-50 rounded-xl border border-stone-100 text-center">
+                            <p className="text-xs text-stone-400 font-medium">No activity log entries recorded for this customer yet.</p>
                         </div>
-                    )) : <p className="text-[8px] text-stone-400 italic">No timeline entries found.</p>}
+                    )}
                 </div>
-            </section> */}
+            </section>
         </div>
     );
 }
+

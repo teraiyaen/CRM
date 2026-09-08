@@ -86,7 +86,7 @@ export default function SubsidyClaimTab({
                         field="first_tranche_date" 
                         value={editData.first_tranche_date} 
                         onChange={handleChange} 
-                        type="date"
+                        type="date" 
                         isEditing={isEditing} 
                     />
                     <EditableDetailItem 
@@ -94,12 +94,47 @@ export default function SubsidyClaimTab({
                         field="second_tranche_date" 
                         value={editData.second_tranche_date} 
                         onChange={handleChange} 
-                        type="date"
+                        type="date" 
                         isEditing={isEditing} 
                     />
-                    {/* Status managed in top header & stage actions */}
+                </div>
+            </section>
+
+            {/* PM Surya Ghar DBT Subsidy Section */}
+            <section className="bg-white p-6 rounded-[24px] border border-stone-100 shadow-sm space-y-4">
+                <div className="flex items-center justify-between border-b border-stone-100 pb-2 mb-1">
+                    <h3 className="text-xs font-bold text-stone-800 uppercase tracking-widest flex items-center gap-2">
+                        <CheckCircle2 size={14} className="text-emerald-500" /> PM Surya Ghar DBT Subsidy
+                    </h3>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
+                    <EditableDetailItem 
+                        label="Eligible Subsidy Amount (₹)" 
+                        field="subsidy_amount" 
+                        value={editData.subsidy_amount} 
+                        onChange={handleChange} 
+                        isMoney={true}
+                        isEditing={isEditing} 
+                    />
+                    <EditableDetailItem 
+                        label="Subsidy Disbursed Date" 
+                        field="subsidy_disbursed_date" 
+                        value={editData.subsidy_disbursed_date} 
+                        onChange={handleChange} 
+                        type="date" 
+                        isEditing={isEditing} 
+                    />
+                    <EditableDetailItem 
+                        label="Subsidy Verification / Status" 
+                        field="subsidy_status" 
+                        value={editData.subsidy_status || editData.portal_status} 
+                        onChange={handleChange} 
+                        isEditing={isEditing} 
+                    />
                 </div>
             </section>
         </div>
     );
 }
+
