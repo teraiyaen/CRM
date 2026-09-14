@@ -1,3 +1,5 @@
+import { todayPaymentDate } from '../utils/customerPayments';
+import { AGREEMENT_COMPANY } from '../agreementCompany';
 // ─── CustomerDetailModal.jsx ──────────────────────────────────────────────────
 // PM Surya Ghar Customer Detail Modal configured for public.admin schema.
 // 7 Stage tabs (Registration, Feasibility, Agreement, Installation, Inspection, Subsidy Claim, DBT Disbursal) + Notes.
@@ -47,14 +49,18 @@ const getChangedFields = (draft = {}, saved = {}) => {
 
 const UNIFIED_TABS = [
     { id: 'basic', label: 'Basic Info', icon: User },
+    { id: 'discom', label: 'Application Status', icon: Send },
     { id: 'technical', label: 'Technical & Plant', icon: Zap },
-    { id: 'finance', label: 'Loan & Subsidy', icon: IndianRupee },
+    { id: 'finance', label: 'Payments & Loan', icon: IndianRupee },
     { id: 'logs', label: 'Remarks & Logs', icon: History },
 ];
 
 const mapToUnifiedTab = (raw) => {
     const t = String(raw || '').toLowerCase();
-    if (t === 'basic' || t === 'technical' || t === 'finance' || t === 'logs') return t;
+    if (t === 'basic' || t === 'discom' || t === 'technical' || t === 'finance' || t === 'logs') return t;
+    if (t.includes('discom') || t.includes('submi') || t.includes('agreement')) {
+        return 'discom';
+    }
     if (t.includes('loan') || t.includes('subsid') || t.includes('pay') || t.includes('claim') || t.includes('disburs') || t.includes('cash')) {
         return 'finance';
     }
@@ -182,6 +188,7 @@ export default function CustomerDetailModal({ customer, onClose, onUpdate, onDel
         }
         setEditData(prev => {
             const next = { ...prev, [field]: val };
+            if (field === 'payment' && val !== '' && val != null && !prev.payment_date) next.payment_date = todayPaymentDate();
             setIsFormDirty(getChangedFields(next, savedDataRef.current).size > 0);
             return next;
         });
@@ -398,9 +405,8 @@ export default function CustomerDetailModal({ customer, onClose, onUpdate, onDel
             village: editData.address || editData.villages || "",
             taluka: editData.sub_division || editData.villages || "",
             district: editData.division || editData.sub_divisions || "",
-            vendorName: editData.dealer || "Teriyan Enterprises",
-            vendorAddress: "Plot No. 12, GIDC Industrial Estate, Near Power Grid Substation, Radhanpur, Patan, Gujarat - 385340",
-            paymentTerms: "Mutually Agreed Terms of Payment",
+            vendorName: AGREEMENT_COMPANY.name,
+            vendorAddress: AGREEMENT_COMPANY.address,
             firstPartySignature: "",
             secondPartyStamp: "./stamp.png",
             secondPartySignature: "",

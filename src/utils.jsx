@@ -673,158 +673,11 @@ export async function compressImage(file, { maxWidth = 1920, maxHeight = 1920, q
     });
 }
 
-export const uploadDocument = async (file, customerId, docType = null, passedUserId = null) => {
-    try {
-        if (!customerId || String(customerId).startsWith('demo-')) {
-            return {
-                id: 'demo-doc-' + Date.now(),
-                customer_id: customerId,
-                file_name: file.name,
-                storage_path: 'mock/' + file.name,
-                file_type: file.type || 'application/pdf',
-                doc_type: docType,
-                uploaded_by: passedUserId || 'demo-user',
-                uploaded_at: new Date().toISOString()
-            };
-        }
-
-        const isImage = file.type && file.type.startsWith('image/');
-        const processedFile = isImage ? await compressImage(file) : file;
-        const cleanName = processedFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-        const uuidPrefix = (typeof crypto !== 'undefined' && crypto.randomUUID) 
-            ? crypto.randomUUID() 
-            : `${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
-        const filePath = `${customerId}/${uuidPrefix}_${cleanName}`;
-
-        // Validate UUID for uploaded_by column
-        const isUUID = (str) => typeof str === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
-        
-        let sessionPromise = null;
-        if (!isUUID(passedUserId)) {
-            sessionPromise = supabase.auth.getSession().catch(() => null);
-        }
-
-        const uploadPromise = supabase.storage
-            .from('customer-documents')
-            .upload(filePath, processedFile, {
-                cacheControl: '3600',
-                upsert: true,
-                contentType: processedFile.type || 'application/octet-stream'
-            });
-
-        const [uploadRes, sessionData] = await Promise.all([uploadPromise, sessionPromise]);
-        
-        if (uploadRes.error) {
-            console.error('Storage upload failed:', uploadRes.error);
-            throw new Error(uploadRes.error.message || 'Storage upload failed');
-        }
-
-        let validUserId = isUUID(passedUserId) ? passedUserId : null;
-        if (!validUserId && sessionData) {
-            const sessionUserId = sessionData?.data?.session?.user?.id;
-            if (isUUID(sessionUserId)) {
-                validUserId = sessionUserId;
-            }
-        }
-
-        const insertPayload = {
-            customer_id: customerId,
-            file_name: processedFile.name,
-            storage_path: filePath,
-            file_type: processedFile.type || (isImage ? 'image/jpeg' : 'application/pdf'),
-            doc_type: docType,
-            uploaded_by: validUserId
-        };
-
-        let { data, error } = await supabase
-            .from('documents')
-            .insert(insertPayload)
-            .select()
-            .single();
-
-        // Fallback retry without uploaded_by if schema constraint error occurs
-        if (error && validUserId) {
-            console.warn('Retrying document insert without uploaded_by:', error);
-            delete insertPayload.uploaded_by;
-            const retryRes = await supabase
-                .from('documents')
-                .insert(insertPayload)
-                .select()
-                .single();
-            data = retryRes.data;
-            error = retryRes.error;
-        }
-
-        if (error) {
-            console.error('Failed to record document in DB:', error);
-            throw new Error(error.message || 'Database insert failed');
-        }
-        return data;
-    } catch (err) {
-        console.error('Error in uploadDocument:', err);
-        throw err;
-    }
-};
-
-export const getCustomerDocuments = async (customerId) => {
-    if (!customerId) return [];
-    if (String(customerId).startsWith('demo-')) {
-        return [
-            { id: 'demo-doc-1', doc_type: 'adhaar_card_front', file_name: 'adhaar_card_front.pdf', file_type: 'application/pdf', storage_path: 'mock/adhaar_front.pdf' },
-            { id: 'demo-doc-2', doc_type: 'adhaar_card_back', file_name: 'adhaar_card_back.pdf', file_type: 'application/pdf', storage_path: 'mock/adhaar_back.pdf' },
-            { id: 'demo-doc-3', doc_type: 'electricity_bill', file_name: 'electricity_bill.pdf', file_type: 'application/pdf', storage_path: 'mock/electricity_bill.pdf' },
-            { id: 'demo-doc-4', doc_type: 'passport_photo', file_name: 'passport_photo.pdf', file_type: 'application/pdf', storage_path: 'mock/passport_photo.pdf' },
-            { id: 'demo-doc-5', doc_type: 'cancelled_cheque', file_name: 'cancelled_cheque.pdf', file_type: 'application/pdf', storage_path: 'mock/cancelled_cheque.pdf' },
-            { id: 'demo-doc-6', doc_type: 'geo_tag_photo', file_name: 'geo_tag_photo.jpg', file_type: 'image/jpeg', storage_path: 'mock/geo_tag_photo.jpg' },
-            { id: 'demo-doc-7', doc_type: 'meter_photo', file_name: 'meter_installation_photo.jpg', file_type: 'image/jpeg', storage_path: 'mock/meter_photo.jpg' },
-        ];
-    }
-    const allDocuments = [];
-    const pageSize = 1000;
-    for (let from = 0; ; from += pageSize) {
-        const { data, error } = await supabase
-            .from('documents')
-            .select('*')
-            .eq('customer_id', customerId)
-            .order('uploaded_at', { ascending: false })
-            .range(from, from + pageSize - 1);
-
-        if (error) {
-            console.error('Failed to fetch documents:', error);
-            break;
-        }
-        const page = data || [];
-        allDocuments.push(...page);
-        if (page.length < pageSize) break;
-    }
-    return allDocuments;
-};
-
-export const getViewUrl = async (storagePath) => {
-    if (!storagePath) return null;
-    if (storagePath.startsWith('mock/') || storagePath.startsWith('http')) {
-        return 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=800&q=80';
-    }
-    const { data, error } = await supabase.storage
-        .from('customer-documents')
-        .createSignedUrl(storagePath, 3600);
-
-    if (error) console.error('Failed to get view URL:', error);
-    return data?.signedUrl || null;
-};
-
-export const getDownloadUrl = async (storagePath, fileName) => {
-    if (!storagePath) return null;
-    if (storagePath.startsWith('mock/') || storagePath.startsWith('http')) {
-        return 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=800&q=80';
-    }
-    const { data, error } = await supabase.storage
-        .from('customer-documents')
-        .createSignedUrl(storagePath, 3600, { download: fileName || true });
-
-    if (error) console.error('Failed to get download URL:', error);
-    return data?.signedUrl || null;
-};
+// CRM attachments are intentionally unsupported. Files belong only to temporary browser tools.
+export const uploadDocument = async () => { throw new Error('CRM file storage is disabled. Use the temporary Stamp Upload tool.'); };
+export const getCustomerDocuments = async () => [];
+export const getViewUrl = async () => null;
+export const getDownloadUrl = async () => null;
 
 /**
  * Downloads a file, prompting the user with the native OS "Save As" location dialog
@@ -874,43 +727,8 @@ export const downloadFileWithSaveAs = async (url, fileName) => {
 // Returns { ok, error }. Previously swallowed every failure with console.error,
 // so an RLS-refused delete removed the row from the list, wrote a "Deleted
 // document" audit entry, and the file reappeared on refresh.
-export const deleteDocument = async (documentId, storagePath) => {
-    const id = typeof documentId === 'object' && documentId !== null ? documentId.id : documentId;
-    const path = typeof documentId === 'object' && documentId !== null ? documentId.storage_path : storagePath;
-
-    if (id) {
-        // Delete the row FIRST. If it fails we still have the storage object,
-        // so nothing is orphaned; the reverse order loses the file for good.
-        const res = await runWrite(
-            supabase.from('documents').delete().eq('id', id).select('id'),
-            { action: 'document deletion' }
-        );
-        if (!res.ok) return res;
-    }
-
-    if (path) {
-        const { error: storageErr } = await supabase.storage.from('customer-documents').remove([path]);
-        if (storageErr) {
-            // The record is gone, which is what the user asked for. The stored
-            // file is now orphaned - worth logging, not worth failing over.
-            console.warn('Document row deleted but the stored file remains:', storageErr.message);
-        }
-    }
-
-    return { ok: true, error: null };
-};
-
-// Returns { ok, error }. Callers MUST check `ok` - this used to return the row
-// (undefined on failure) and log to the console, so every "Saved!" badge and
-// every "[RETURNED]" flag was reported whether or not the write landed.
-export const updateDocumentRemark = async (documentId, remark) => {
-    if (!documentId) return { ok: false, error: new Error('No document was specified.') };
-
-    return runWrite(
-        supabase.from('documents').update({ remark: remark || '' }).eq('id', documentId).select('id'),
-        { action: 'remark' }
-    );
-};
+export const deleteDocument = async () => ({ ok: false, error: new Error('CRM file storage is disabled.') });
+export const updateDocumentRemark = async () => ({ ok: false, error: new Error('CRM file storage is disabled.') });
 
 export async function fetchAgent2SubAgents(branchName) {
     const clean = (branchName || '').trim();
@@ -936,12 +754,13 @@ export async function fetchAgent2SubAgents(branchName) {
 export const normalizeLoanTag = (tag) => {
     if (!tag) return null;
     const s = String(tag).trim().toLowerCase();
+    if (s.includes('2nd') || s.includes('second')) return '2nd Payment';
+    if (s.includes('1st') || s.includes('first')) return '1st Payment';
     if (s.includes('partial')) return 'Partial Disburse';
     if (s.includes('disburs')) return 'Disbursed';
     if (s.includes('sanc') || s.includes('approved')) return 'Sanctioned';
     if (s.includes('reject') || s.includes('decline')) return 'Reject';
-    if (s.includes('return')) return 'Returned';
-    if (s.includes('process') || s.includes('pending')) return 'Inprocess';
+    if (s.includes('return') || s.includes('process') || s.includes('pending')) return null;
     return tag.trim();
 };
 

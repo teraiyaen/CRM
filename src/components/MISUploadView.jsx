@@ -146,6 +146,7 @@ const HEADER_SYNONYMS = {
 
 export default function MISUploadView({ role = 'admin' }) {
     const [uploading, setUploading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
     const [uploadStats, setUploadStats] = useState(null);
     const [errorMsg, setErrorMsg] = useState(null);
     const [flaggedItems, setFlaggedItems] = useState([]);

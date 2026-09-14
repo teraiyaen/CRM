@@ -1,286 +1,51 @@
-import React, { useState, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Page1 } from './Page1';
 import { Page2 } from './Page2';
 import { Page3 } from './Page3';
 import { Page4 } from './Page4';
-import { Printer, ZoomIn, ZoomOut, FileText, Eye, EyeOff, X, Type, RotateCw } from 'lucide-react';
 
-export const AgreementPreview = ({ data, onChange, onClose }) => {
-  const [zoom, setZoom] = useState(100);
-  const [fontSize, setFontSize] = useState('text-[17px]');
-  const [stampRotation, setStampRotation] = useState(0);
-  const containerRef = useRef(null);
-
-  const handlePrint = () => {
-    const printContainer = containerRef.current;
-    if (!printContainer) return;
-
-    // Capture all styles from the parent document
-    const parentStyles = Array.from(document.head.querySelectorAll('style, link[rel="stylesheet"]'))
-      .map(tag => tag.outerHTML)
-      .join('\n');
-
-    // Create a hidden 0x0 iframe — no new tab, prints in same page
-    const iframe = document.createElement('iframe');
-    iframe.style.position = 'fixed';
-    iframe.style.right = '0';
-    iframe.style.bottom = '0';
-    iframe.style.width = '0';
-    iframe.style.height = '0';
-    iframe.style.border = '0';
-    iframe.style.opacity = '0';
-    document.body.appendChild(iframe);
-
-    const cleanName = (data?.consumerName || 'Client').replace(/[^a-zA-Z0-9_-]/g, '_');
-    const cleanConsumerNo = (data?.consumerNo || 'Agreement').replace(/[^a-zA-Z0-9_-]/g, '_');
-    const docTitle = `Discom_Agreement_${cleanName}_${cleanConsumerNo}`;
-    const prevDocTitle = document.title;
-
-    const iframeDoc = iframe.contentWindow.document;
-    iframeDoc.open();
-    iframeDoc.write(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>${docTitle}</title>
-          <meta charset="utf-8">
-          ${parentStyles}
-          <style>
-            @media print {
-              @page { size: A4 portrait; margin: 0; }
-              html, body { margin: 0 !important; padding: 0 !important; background: white !important; }
-            }
-            body { font-family: Calibri, 'Calibri Light', sans-serif; font-weight: 400; background: white; margin: 0; padding: 0; }
-            .doc-page {
-              width: 210mm !important;
-              min-height: 297mm !important;
-              height: 297mm !important;
-              margin: 0 auto !important;
-              padding: 12mm 15mm 16mm 15mm !important;
-              box-sizing: border-box !important;
-              page-break-after: always !important;
-              break-after: page !important;
-              position: relative !important;
-              font-weight: 400 !important;
-              background: white !important;
-              color: #1e293b !important;
-              box-shadow: none !important;
-              border: none !important;
-            }
-            .stamp-page {
-              padding: 0 !important;
-              margin: 0 auto !important;
-            }
-            .font-normal { font-weight: 400 !important; }
-            .font-medium { font-weight: 500 !important; }
-            .font-semibold { font-weight: 600 !important; }
-            .font-bold, b, strong { font-weight: 700 !important; }
-            .no-print { display: none !important; }
-            .doc-page .absolute.bottom-5 {
-              position: absolute !important;
-              bottom: 12mm !important;
-              left: 15mm !important;
-              right: 15mm !important;
-            }
-            div[style*="transform"] { transform: none !important; }
-          </style>
-
-        </head>
-        <body style="background: white; margin: 0; padding: 0;">
-          ${printContainer.innerHTML}
-        </body>
-      </html>
-    `);
-    iframeDoc.close();
-
-    let hasPrinted = false;
-    const doPrint = () => {
-      if (hasPrinted) return;
-      hasPrinted = true;
-      document.title = docTitle;
-      iframe.contentWindow.focus();
-      iframe.contentWindow.print();
-      setTimeout(() => {
-        document.title = prevDocTitle;
-        if (document.body.contains(iframe)) document.body.removeChild(iframe);
-      }, 1000);
+export const AgreementPreview = ({ data, onClose }) => {
+    const content = useRef(null);
+    const printFrame = useRef(null);
+    useEffect(() => () => { printFrame.current?.remove(); }, []);
+    const [printing,setPrinting] = useState(false);
+    const [error,setError] = useState('');
+    const print = () => {
+        if(printing||!content.current)return;
+        setPrinting(true);setError('');
+        const frame=document.createElement('iframe');
+        frame.title='Print agreement';
+        frame.style.cssText='position:fixed;width:0;height:0;border:0;bottom:0;left:0;';
+        const styles=Array.from(document.querySelectorAll('style,link[rel="stylesheet"]')).map(node=>node.outerHTML).join('\n');
+        const title=`Agreement_${String(data.consumerNo||'document').replace(/[^a-zA-Z0-9_-]/g,'_')}`;
+        const cleanup=()=>{frame.remove();printFrame.current=null;setPrinting(false);};
+        frame.onload=async()=>{
+            try {
+                const doc=frame.contentDocument;
+                await doc.fonts.ready;
+                await Promise.all(Array.from(doc.images).map(img=>img.decode()));
+                frame.contentWindow.onafterprint=cleanup;
+                frame.contentWindow.focus();frame.contentWindow.print();
+            }catch(err){cleanup();setError(`Could not prepare printing: ${err.message}`);}
+        };
+        frame.srcdoc=`<!doctype html><html><head><meta charset="utf-8"><title>${title}</title>${styles}<style>
+            @page {size:A4 portrait;margin:0;}
+            html,body{margin:0!important;padding:0!important;background:white!important;}
+            .doc-page{width:210mm!important;height:297mm!important;min-height:297mm!important;box-sizing:border-box!important;padding:12mm 15mm 16mm!important;margin:0!important;position:relative!important;box-shadow:none!important;border:none!important;break-after:page;page-break-after:always;font-size:16px!important;}
+            .doc-page:last-child{break-after:auto;page-break-after:auto;}
+            .doc-page.stamp-page{padding:0!important;display:flex;align-items:center;justify-content:center;}
+            .stamp-page img{max-width:100%;max-height:297mm;object-fit:contain;}
+            .doc-page .absolute.bottom-5{bottom:12mm!important;left:15mm!important;right:15mm!important;}
+        </style></head><body>${content.current.innerHTML}</body></html>`;
+        printFrame.current=frame;
+        document.body.appendChild(frame);
     };
-
-    iframe.contentWindow.onload = doPrint;
-    // Fallback in case onload already fired
-    setTimeout(doPrint, 600);
-  };
-
-
-  const scrollToPage = (pageNum) => {
-    const pageEl = document.getElementById(`crm-agreement-page-${pageNum}`);
-    if (pageEl) {
-      pageEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4 no-print animate-in fade-in duration-200">
-      <div className="bg-slate-900 rounded-[28px] w-full max-w-6xl h-[92vh] flex flex-col overflow-hidden border border-slate-800 shadow-2xl relative">
-        
-        {/* Header (Controls) */}
-        <div className="bg-slate-950 px-6 py-4 flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 flex-shrink-0">
-          {/* Left: Title & Page Jumps */}
-          <div className="flex items-center gap-3">
-            <span className="font-bold text-sm text-slate-200 flex items-center gap-2">
-              <FileText className="w-5 h-5 text-amber-400" />
-              PM Surya Ghar Agreement {data.gpaStampUrl ? '(5 Pages · GPA Stamp Attached)' : '(4 Pages)'}
-            </span>
-            <div className="h-4 w-[1px] bg-slate-800 mx-1" />
-            <div className="flex items-center gap-1 bg-slate-900 p-0.5 rounded border border-slate-800">
-              {data.gpaStampUrl && (
-                <button
-                  type="button"
-                  onClick={() => scrollToPage(0)}
-                  className="px-2 py-0.5 text-[10px] font-bold rounded bg-amber-400/10 text-amber-300 hover:bg-amber-400/20 transition cursor-pointer"
-                >
-                  Stamp Page
-                </button>
-              )}
-              {[1, 2, 3, 4].map((num) => (
-                <button
-                  key={num}
-                  type="button"
-                  onClick={() => scrollToPage(num)}
-                  className="px-2 py-0.5 text-[10px] font-bold rounded hover:bg-slate-800 text-slate-400 hover:text-amber-400 transition cursor-pointer"
-                >
-                  Page {num}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Right: Zoom, Font, Highlights, Rotate, Print & Close */}
-          <div className="flex items-center gap-4 xl:gap-5">
-            
-            {/* Rotate Stamp Button (if stamp exists) */}
-            {data.gpaStampUrl && (
-              <button
-                type="button"
-                onClick={() => setStampRotation(prev => (prev + 90) % 360)}
-                className="px-3 py-2 rounded-xl border border-slate-800 bg-slate-900 hover:bg-slate-800 text-xs font-bold text-amber-300 flex items-center gap-1.5 transition cursor-pointer shadow-xs"
-                title="Rotate stamp 90° clockwise if uploaded sideways"
-              >
-                <RotateCw className="w-3.5 h-3.5 text-amber-400" />
-                <span>Rotate Stamp{stampRotation > 0 ? ` (${stampRotation}°)` : ''}</span>
-              </button>
-            )}
-
-            {/* Highlight Toggle */}
-            <button
-              type="button"
-              onClick={() => onChange({ ...data, showHighlights: !data.showHighlights })}
-              className={`px-3.5 py-2 rounded-xl border text-xs flex items-center gap-2 transition font-bold ${
-                data.showHighlights
-                  ? 'bg-amber-400/20 border-amber-500/30 text-amber-300 shadow-lg shadow-amber-400/5'
-                  : 'bg-slate-900 border-slate-800 text-slate-400 hover:bg-slate-850 hover:text-slate-200'
-              }`}
-            >
-              {data.showHighlights ? <Eye className="w-4 h-4 text-amber-400" /> : <EyeOff className="w-4 h-4 text-slate-500" />}
-              <span>{data.showHighlights ? 'Highlights On' : 'Highlights Off'}</span>
-            </button>
-
-            {/* Font Size Selection */}
-            <div className="flex items-center gap-2 bg-slate-900 rounded-xl border border-slate-800 px-3 py-1.5">
-              <Type className="w-4 h-4 text-slate-400" />
-              <select
-                value={fontSize}
-                onChange={(e) => setFontSize(e.target.value)}
-                className="bg-transparent border-0 text-xs font-bold text-slate-200 focus:outline-none focus:ring-0 cursor-pointer pr-1"
-              >
-                <option value="text-[14px]">Small (14px)</option>
-                <option value="text-[16px]">Medium (16px)</option>
-                <option value="text-[17px]">Standard (17px)</option>
-                <option value="text-[19px]">Large (19px)</option>
-              </select>
-            </div>
-
-            {/* Zoom Controls */}
-            <div className="flex items-center gap-2 bg-slate-900 rounded-xl border border-slate-800 px-3 py-1.5">
-              <button
-                onClick={() => setZoom(Math.max(60, zoom - 10))}
-                className="text-slate-400 hover:text-slate-200 p-0.5"
-                title="Zoom Out"
-              >
-                <ZoomOut className="w-4 h-4" />
-              </button>
-              <span className="text-xs font-bold text-slate-200 w-9 text-center">{zoom}%</span>
-              <button
-                onClick={() => setZoom(Math.min(140, zoom + 10))}
-                className="text-slate-400 hover:text-slate-200 p-0.5"
-                title="Zoom In"
-              >
-                <ZoomIn className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Print Button */}
-            <button
-              onClick={handlePrint}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-xl flex items-center gap-2 shadow-lg shadow-blue-600/20 transition text-xs cursor-pointer"
-            >
-              <Printer className="w-4 h-4" />
-              <span>Print / Save PDF</span>
-            </button>
-
-            {/* Close Button */}
-            <button
-              onClick={onClose}
-              className="text-slate-400 hover:text-slate-200 p-1.5 rounded-xl hover:bg-slate-800 transition-colors ml-1"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-
-        {/* Zoomable Pages Scroll Area */}
-        <div
-          ref={containerRef}
-          className="flex-1 overflow-y-auto p-8 bg-slate-950 print:bg-white print-document-container"
-        >
-          <div
-            className="transition-transform origin-top mx-auto space-y-8 print:space-y-0 print:p-0 print:m-0 print:transform-none"
-            style={{ transform: `scale(${zoom / 100})`, width: '210mm' }}
-          >
-            {data.gpaStampUrl && (
-              <div id="crm-agreement-page-0" className="print:m-0 print:p-0">
-                <div 
-                  className="doc-page stamp-page bg-white relative mx-auto shadow-2xl rounded-sm overflow-hidden" 
-                  style={{ minHeight: '297mm', height: '297mm', width: '210mm', boxSizing: 'border-box', padding: 0, position: 'relative' }}
-                >
-                  <img 
-                    src={data.gpaStampUrl} 
-                    alt="PM Surya GPA Stamp" 
-                    onLoad={(e) => {
-                      if (e.target.naturalWidth > e.target.naturalHeight && stampRotation === 0) {
-                        setStampRotation(90);
-                      }
-                    }}
-                    style={
-                      stampRotation === 90
-                        ? { width: '297mm', height: '210mm', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%) rotate(90deg)', objectFit: 'fill', imageOrientation: 'from-image' }
-                        : stampRotation === 180
-                        ? { width: '210mm', height: '297mm', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%) rotate(180deg)', objectFit: 'fill', imageOrientation: 'from-image' }
-                        : stampRotation === 270
-                        ? { width: '297mm', height: '210mm', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%) rotate(270deg)', objectFit: 'fill', imageOrientation: 'from-image' }
-                        : { width: '210mm', height: '297mm', display: 'block', objectFit: 'fill', imageOrientation: 'from-image' }
-                    }
-                  />
-                </div>
-              </div>
-            )}
-            <div id="crm-agreement-page-1" className="print:m-0 print:p-0"><Page1 data={data} fontSizeClass={fontSize} /></div>
-            <div id="crm-agreement-page-2" className="print:m-0 print:p-0"><Page2 data={data} fontSizeClass={fontSize} /></div>
-            <div id="crm-agreement-page-3" className="print:m-0 print:p-0"><Page3 data={data} fontSizeClass={fontSize} /></div>
-            <div id="crm-agreement-page-4" className="print:m-0 print:p-0"><Page4 data={data} fontSizeClass={fontSize} /></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+    return <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 p-3"><section role="dialog" aria-modal="true" aria-labelledby="agreement-preview-title" className="flex h-[94vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl bg-stone-100">
+        <header className="flex flex-wrap items-center justify-between gap-3 bg-stone-900 p-4 text-white"><h2 id="agreement-preview-title" className="font-bold">Agreement · {data.gpaStampUrl?'5 pages, stamp first':'4 pages, no stamp'}</h2><div className="flex gap-3"><button disabled={printing} onClick={print} className="rounded-lg bg-amber-500 px-4 py-2 text-sm text-black disabled:opacity-50">{printing?'Preparing print…':'Print / Save PDF'}</button><button onClick={onClose} className="rounded-lg border px-4 py-2 text-sm">Back to details</button></div></header>
+        {error&&<p role="alert" className="p-3 text-sm text-red-700">{error}</p>}
+        <div className="flex-1 overflow-auto p-4"><div ref={content} className="mx-auto w-fit space-y-4">
+            {data.gpaStampUrl&&<div className="doc-page stamp-page flex items-center justify-center" style={{padding:0}}><img src={data.gpaStampUrl} alt="Stamp first page" style={{maxWidth:'100%',maxHeight:'297mm',objectFit:'contain'}}/></div>}
+            <Page1 data={data} fontSizeClass="text-[16px]"/><Page2 data={data} fontSizeClass="text-[16px]"/><Page3 data={data} fontSizeClass="text-[16px]"/><Page4 data={data} fontSizeClass="text-[16px]"/>
+        </div></div>
+    </section></div>;
 };

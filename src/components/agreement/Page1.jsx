@@ -24,7 +24,7 @@ export const Page1 = ({ data, fontSizeClass = 'text-[17px]' }) => {
         <p className="text-justify font-normal">
           This agreement is executed on{' '}
           <span className="font-normal" style={getHighlightStyle()}>
-            {data.executionDate || '23-06-2026'}
+            {data.executionDate || '________________'}
           </span>{' '}
           for design, supply, installation, commissioning and 5-year comprehensive maintenance of RTS project/system along with warranty under PM Surya Ghar: Muft Bijli Yojana
         </p>
@@ -36,24 +36,25 @@ export const Page1 = ({ data, fontSizeClass = 'text-[17px]' }) => {
 
         <p className="text-justify font-normal">
           <span className="font-normal" style={getHighlightStyle()}>
-            {data.consumerName || 'MALEK HUSENABEN IKBALBHAI'}
+            {data.consumerName || '________________'}
           </span>{' '}
           ,Consumer No-{' '}
           <span className="font-normal" style={getHighlightStyle()}>
-            {data.consumerNo || '72101170051'}
+            {data.consumerNo || '________________'}
           </span>{' '}
-          having address at Vill{' '}
+          having address at{' '}<span style={getHighlightStyle()}>{data.address || '________________'}</span>{' '}, Vill{' '}
           <span className="font-normal" style={getHighlightStyle()}>
-            {data.village || 'RADHANPUR'}
+            {data.village || '________________'}
           </span>
           ,Tal:{' '}
           <span className="font-normal" style={getHighlightStyle()}>
-            {data.taluka || 'RADHANPUR'}
+            {data.taluka || '________________'}
           </span>{' '}
           Dist:{' '}
           <span className="font-normal" style={getHighlightStyle()}>
-            {data.district || 'PATAN'}
+            {data.district || '________________'}
           </span>{' '}
+          <span style={getHighlightStyle()}>{data.state || ''}</span>{' '}
           (hereinafter referred to as first Party i.e. /consumer/consumer/purchaser /owner of system).
         </p>
 
@@ -61,11 +62,11 @@ export const Page1 = ({ data, fontSizeClass = 'text-[17px]' }) => {
 
         <p className="text-justify font-normal">
           <span className="font-normal">
-            {data.vendorName || 'Teriyan Enterprises'}
+            {data.vendorName || '________________'}
           </span>{' '}
           having registered office at{' '}
           <span className="font-normal underline">
-            {data.vendorAddress || 'Plot No. 12, GIDC Industrial Estate, Near Power Grid Substation, Radhanpur, Patan, Gujarat - 385340'}
+            {data.vendorAddress || '________________'}
           </span>{' '}
           (hereinafter referred to as second Party i.e. Vendor/ contractor/ System Integrator).
         </p>

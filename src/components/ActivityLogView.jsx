@@ -1,3 +1,4 @@
+import { SavedDocumentButton } from './SavedDocumentsView';
 // ─── ActivityLogView.jsx ──────────────────────────────────────────────────────
 // Full-page activity log.
 //
@@ -160,7 +161,7 @@ export default function ActivityLogView() {
                     className="bg-white border border-stone-200 rounded-xl px-3 py-1.5 text-[11px] font-bold text-stone-700 focus:outline-none focus:ring-1 focus:ring-amber-400 cursor-pointer shadow-xs"
                 >
                     <option value="all">All actions</option>
-                    {['create', 'update', 'stage_change', 'delete', 'email', 'error_occurred'].map(a => (
+                    {['create', 'update', 'stage_change', 'delete', 'email', 'error_occurred', 'bom_created', 'agreement_created', 'stock_received', 'stock_deducted'].map(a => (
                         <option key={a} value={a}>{a.replace('_', ' ')}</option>
                     ))}
                 </select>
@@ -218,7 +219,7 @@ export default function ActivityLogView() {
                     })()}
                     <div className="flex-1 min-w-0">
                         <p className="text-sm text-stone-800">{log.message}</p>
-                        {log.new_value && <p className="text-xs text-stone-500 mt-0.5">{log.new_value}</p>}
+                        {['bom_created','agreement_created'].includes(log.action) ? <SavedDocumentButton id={log.id}/> : log.new_value && <p className="text-xs text-stone-500 mt-0.5">{log.new_value}</p>}
                         <p className="text-[10px] text-stone-400 mt-1 font-bold uppercase">
                             {log.profiles?.name || 'Unknown'} • {new Date(log.created_at).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' })}
                         </p>

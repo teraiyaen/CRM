@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { supabase } from '../../supabase';
-import { ClipboardList, Save, FileText, Printer, RotateCcw, AlertTriangle, CheckCircle2, SendHorizonal, Loader2 } from 'lucide-react';
+import { AGREEMENT_COMPANY } from '../../agreementCompany';
+import React, { useState } from 'react';
+import { FileText, Printer } from 'lucide-react';
 import { Page1 } from '../agreement/Page1';
-import { CheckboxRemarkItem } from './shared';
 import { formatDateToDDMMYYYY } from '../../utils';
 
 export default function DiscomSubmissionTab({
@@ -14,15 +13,9 @@ export default function DiscomSubmissionTab({
     logActivity,
     fetchLogs,
     user,
-    handleChange,
     saving,
     setSaving,
     onGenerateAgreement,
-    documents = [],
-    onFileUpload,
-    onFileDelete,
-    onFilePreview,
-    onUpdateRemark,
     meta = {}
 }) {
     const storedSubmissionData = editData.discom_submission || {};
@@ -33,26 +26,6 @@ export default function DiscomSubmissionTab({
         second_party: storedSubmissionData.second_party || 'WATERSUN ELECTRICAL SOLUTIONS PRIVATE LIMITED',
         purchased_party: storedSubmissionData.purchased_party || 'WATERSUN ELECTRICAL SOLUTIONS PRIVATE LIMITED',
     };
-    const isStampSent = !!submissionData.stamp_sent;
-    const isSentToStampMaker = !!submissionData.sent_to_stamp_maker;
-
-    const [sendBackRemark, setSendBackRemark] = useState('');
-    const [sendingBack, setSendingBack] = useState(false);
-    const [sendBackDone, setSendBackDone] = useState(false);
-    const [sendingToStamp, setSendingToStamp] = useState(false);
-    // Stamp makers come from the actual login accounts (profiles.user_type =
-    // 'stamp'), not a separate name list - a separate list drifts from the real
-    // accounts, which is how a fabricated vendor ended up on live customers.
-    const [stampMakers, setStampMakers] = useState([]);
-    const [selectedStampMaker, setSelectedStampMaker] = useState('');
-    const [reassigning, setReassigning] = useState(false);
-    const [reassignConfirm, setReassignConfirm] = useState(null); // { from, to }
-    const [recalling, setRecalling] = useState(false);
-    const [showConfirmSend, setShowConfirmSend] = useState(false);
-    const [showConfirmRecall, setShowConfirmRecall] = useState(false);
-    const [approvingStamp, setApprovingStamp] = useState(false);
-    const [showResendBox, setShowResendBox] = useState(false);
-    const [actionError, setActionError] = useState(null);
     const [staffList, setStaffList] = useState([]);
 
     React.useEffect(() => {
@@ -60,180 +33,10 @@ export default function DiscomSubmissionTab({
         setStaffList(staff);
     }, [meta]);
 
-    const canDeleteDocs = user?.userType === "admin" || user?.userType === "sales" || user?.userType === "office";
-
     const isDiscomDetailsEditable = isEditable || 
         user?.userType === 'sales' || 
         user?.userType === 'admin' || 
         user?.userType === 'channel_partner_office';
-
-    useEffect(() => {
-        let cancelled = false;
-        (async () => {
-            const { data, error } = await supabase
-                .from('profiles')
-                .select('id, name')
-                .eq('user_type', 'stamp')
-                .neq('status', 'inactive')
-                .order('name');
-            if (error) {
-                console.warn('Could not load stamp makers:', error.message);
-                return;
-            }
-            if (!cancelled) setStampMakers(data || []);
-        })();
-        return () => { cancelled = true; };
-    }, []);
-
-    // Preselect whoever it was already assigned to, so re-sending keeps them.
-    useEffect(() => {
-        setSelectedStampMaker(submissionData.assigned_stamp_maker || '');
-    }, [submissionData.assigned_stamp_maker]);
-
-    /* Send details to stamp maker */
-    const handleSendToStampMaker = async () => {
-        setSendingToStamp(true);
-        setActionError(null);
-        try {
-            const chosen = stampMakers.find(m => m.name === selectedStampMaker);
-            const merged = {
-                ...submissionData,
-                sent_to_stamp_maker: true,
-                sent_to_stamp_maker_at: new Date().toISOString(),
-                sent_to_stamp_maker_by: user?.name || user?.email || 'Office',
-                assigned_stamp_maker: selectedStampMaker || null,
-                assigned_stamp_maker_id: chosen?.id || null,
-            };
-            const ok = await onUpdate(customer.id, { discom_submission: merged });
-            if (ok === false) throw new Error('The database did not accept the change.');
-            await logActivity(user.id, 'update',
-                `${customer.customer_name}: Discom details sent to Stamp Maker`, '', customer.id);
-            setEditData(prev => ({ ...prev, discom_submission: merged }));
-            fetchLogs();
-        } catch (err) { setActionError('Failed to send to stamp maker: ' + err.message); }
-        finally { setSendingToStamp(false); }
-    };
-
-    /* Hand an already-sent record to a different stamp maker */
-    const handleReassignStampMaker = async (name) => {
-        setReassigning(true);
-        setActionError(null);
-        try {
-            const chosen = stampMakers.find(m => m.name === name);
-            const merged = {
-                ...submissionData,
-                assigned_stamp_maker: name || null,
-                assigned_stamp_maker_id: chosen?.id || null,
-                assigned_stamp_maker_by: user?.name || user?.email || 'Office',
-                assigned_stamp_maker_at: new Date().toISOString(),
-            };
-            const ok = await onUpdate(customer.id, { discom_submission: merged });
-            if (ok === false) throw new Error('The database did not accept the change.');
-            setEditData(prev => ({ ...prev, discom_submission: merged }));
-            setSelectedStampMaker(name || '');
-            const fromLabel = submissionData.assigned_stamp_maker || 'nobody';
-            await logActivity(user.id, 'update',
-                `${customer.customer_name}: Stamp reassigned from ${fromLabel} to ${name || 'nobody (unassigned)'}`, '', customer.id);
-            fetchLogs();
-        } catch (err) {
-            setActionError('Failed to reassign: ' + err.message);
-        } finally {
-            setReassigning(false);
-        }
-    };
-
-    /* Recall — pull back from stamp maker */
-    const handleRecall = async () => {
-        setShowConfirmRecall(false);
-        setRecalling(true);
-        setActionError(null);
-        try {
-            const merged = {
-                ...submissionData,
-                sent_to_stamp_maker: false,
-                recalled_by: user?.name || user?.email || 'Office',
-                recalled_at: new Date().toISOString(),
-            };
-            const ok = await onUpdate(customer.id, { discom_submission: merged });
-            if (ok === false) throw new Error('The database did not accept the change.');
-            await logActivity(user.id, 'update',
-                `${customer.customer_name}: Recalled from Stamp Maker`, '', customer.id);
-            setEditData(prev => ({ ...prev, discom_submission: merged }));
-            fetchLogs();
-        } catch (err) { setActionError('Failed to recall: ' + err.message); }
-        finally { setRecalling(false); }
-    };
-
-    /* Approve Stamp */
-    const handleApproveStamp = async () => {
-        setApprovingStamp(true);
-        setActionError(null);
-        try {
-            const merged = {
-                ...submissionData,
-                stamp_approved: true,
-                stamp_approved_by: user?.name || user?.email || 'Office',
-                stamp_approved_at: new Date().toISOString(),
-                stamp_sendback_remark: null,
-            };
-            const ok = await onUpdate(customer.id, { discom_submission: merged });
-            if (ok === false) throw new Error('The database did not accept the approval.');
-            await logActivity(
-                user.id,
-                'update',
-                `${customer.customer_name}: PM Surya Ghar Stamp approved by ${user?.name || 'Office'}`,
-                '',
-                customer.id
-            );
-            setEditData(prev => ({ ...prev, discom_submission: merged }));
-            setShowResendBox(false);
-            fetchLogs();
-        } catch (err) {
-            setActionError('Failed to approve stamp: ' + err.message);
-        } finally {
-            setApprovingStamp(false);
-        }
-    };
-
-    /* Resend (Send Back) with remark */
-    const handleSendBack = async () => {
-        if (!sendBackRemark.trim()) {
-            setActionError('Please write a remark explaining what needs to be fixed before resending.');
-            return;
-        }
-        setSendingBack(true);
-        setActionError(null);
-        try {
-            const merged = {
-                ...submissionData,
-                stamp_sent: false,
-                sent_to_stamp_maker: true,
-                stamp_approved: false,
-                stamp_sendback_remark: sendBackRemark.trim(),
-                stamp_sendback_by: user?.name || user?.email || 'Office',
-                stamp_sendback_at: new Date().toISOString(),
-            };
-            // Was a direct supabase.update() while the other three stamp actions
-            // go through onUpdate. That bypassed the parent's error handling,
-            // its state sync and the column sanitiser - and its result was never
-            // checked, so a failed send-back still cleared the remark box and
-            // looked like it had worked.
-            const ok = await onUpdate(customer.id, { discom_submission: merged });
-            if (ok === false) throw new Error('The database did not accept the send-back.');
-            await logActivity(
-                user.id, 'update',
-                `${customer.customer_name}: Stamp sent back to Stamp Maker — "${sendBackRemark.trim()}"`,
-                '', customer.id
-            );
-            // Reflect in editData so UI updates immediately
-            setEditData(prev => ({ ...prev, discom_submission: merged }));
-            setSendBackDone(true);
-            setSendBackRemark('');
-            setShowResendBox(false);
-            fetchLogs();
-        } catch (err) { setActionError('Failed to resend: ' + err.message); }
-        finally { setSendingBack(false); }
-    };
 
     const handleSubmissionFieldChange = (field, val) => {
         const updated = {
@@ -247,54 +50,6 @@ export default function DiscomSubmissionTab({
 
     return (
         <div className="space-y-4 animate-in fade-in duration-300">
-            <div className="bg-white p-6 rounded-[24px] border border-stone-100 shadow-sm space-y-4">
-                <h4 className="text-xs font-bold text-stone-700 uppercase tracking-widest flex items-center gap-2">
-                    <ClipboardList className="w-4 h-4 text-amber-500" /> Utility File Checklist
-                </h4>
-                <div className="flex flex-col gap-2">
-                    <CheckboxRemarkItem label="Vendor Feasibility" field="vendor_feasibility" value={editData.vendor_feasibility} onChange={handleChange} isEditing={isEditable} documents={documents} onUpload={onFileUpload} onDelete={onFileDelete} onPreview={onFilePreview} onUpdateRemark={onUpdateRemark} canDelete={canDeleteDocs} />
-                    <CheckboxRemarkItem label="Site Feasibility" field="site_feasibility" value={editData.site_feasibility} onChange={handleChange} isEditing={isEditable} documents={documents} onUpload={onFileUpload} onDelete={onFileDelete} onPreview={onFilePreview} onUpdateRemark={onUpdateRemark} canDelete={canDeleteDocs} />
-                    <CheckboxRemarkItem label="DCR Certificate" field="dcr_certificate" value={editData.dcr_certificate} onChange={handleChange} isEditing={isEditable} documents={documents} onUpload={onFileUpload} onDelete={onFileDelete} onPreview={onFilePreview} onUpdateRemark={onUpdateRemark} canDelete={canDeleteDocs} />
-                    <CheckboxRemarkItem label="Signature" field="signature_pic" value={editData.signature_pic} onChange={handleChange} isEditing={isEditable} documents={documents} onUpload={onFileUpload} onDelete={onFileDelete} onPreview={onFilePreview} onUpdateRemark={onUpdateRemark} canDelete={canDeleteDocs} />
-                </div>
-                {isEditable && (
-                    editData.vendor_feasibility !== customer.vendor_feasibility ||
-                    editData.site_feasibility !== customer.site_feasibility ||
-                    editData.dcr_certificate !== customer.dcr_certificate || 
-                    editData.signature_pic !== customer.signature_pic
-                ) && (
-                    <div className="flex justify-end pt-2">
-                        <button
-                            type="button"
-                            onClick={async () => {
-                                setSaving(true);
-                                // A failed save must stop here - otherwise the activity log below
-                                // records a change that never reached the database.
-                                if (await onUpdate(customer.id, {
-                                    vendor_feasibility: editData.vendor_feasibility,
-                                    site_feasibility: editData.site_feasibility,
-                                    dcr_certificate: editData.dcr_certificate,
-                                    signature_pic: editData.signature_pic
-                                }) === false) { setSaving(false); return; }
-                                await logActivity(
-                                    user.id, 
-                                    'update', 
-                                    `${customer.customer_name}: Updated Utility File Checklist (Vendor Feasibility: ${editData.vendor_feasibility ? 'Uploaded' : 'Pending'}, Site Feasibility: ${editData.site_feasibility ? 'Uploaded' : 'Pending'}, DCR: ${editData.dcr_certificate ? 'Uploaded' : 'Pending'}, Signature: ${editData.signature_pic ? 'Uploaded' : 'Pending'})`, 
-                                    '', 
-                                    customer.id
-                                );
-                                setSaving(false);
-                                fetchLogs();
-                            }}
-                            disabled={saving}
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-600/10 flex items-center gap-1.5 disabled:bg-stone-300 disabled:cursor-not-allowed cursor-pointer"
-                        >
-                            <Save className="w-4 h-4" /> Save Checklist
-                        </button>
-                    </div>
-                )}
-            </div>
-
             {/* Discom Submission Details Card */}
             <div className="bg-white p-6 rounded-[24px] border border-stone-100 shadow-sm space-y-4">
                 <div className="flex items-center justify-between border-b border-stone-100 pb-2.5">
@@ -880,9 +635,8 @@ export default function DiscomSubmissionTab({
                                         village: editData.villages || '',
                                         taluka: editData.villages || '',
                                         district: editData.sub_divisions || '',
-                                        vendorName: 'Watersun Solar Energy',
-                                        vendorAddress: 'Plot No 40 GIDC Estate Radhanpur',
-                                        paymentTerms: 'Mutually Agreed Terms of Payment',
+                                        vendorName: AGREEMENT_COMPANY.name,
+                                        vendorAddress: AGREEMENT_COMPANY.address,
                                         showHighlights: true,
                                         highlightColor: '#fef08a'
                                     }}

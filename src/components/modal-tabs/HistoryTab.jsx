@@ -1,4 +1,5 @@
 import React from 'react';
+import { SavedDocumentButton } from '../SavedDocumentsView';
 import { ShieldCheck, Send } from 'lucide-react';
 import { SectionHeader } from './shared';
 import { formatLogDate } from '../../utils';
@@ -85,6 +86,7 @@ export default function HistoryTab({
                                             log?.message || '–'
                                         )}
                                     </div>
+                                    {['bom_created', 'agreement_created'].includes(log.action) && <SavedDocumentButton id={log.id} />}
                                     <p className="text-[8px] text-stone-400 font-bold uppercase mt-2 border-t border-stone-50 pt-1.5">
                                         User: {log.profiles?.name || 'System'}
                                     </p>

@@ -46,8 +46,15 @@ export default function LoanView({ onSelectCustomer, isChannelPartnerOffice, par
             const countPromises = LOAN_TAGS.map(async (tag) => {
                 let tagQuery = supabase
                     .from('admin')
-                    .select('*', { count: 'exact', head: true })
-                    .or(`loan_status.ilike.%${tag.id}%,financing_tag.ilike.%${tag.id}%,status.ilike.%${tag.id}%,portal_status.ilike.%${tag.id}%`);
+                    .select('*', { count: 'exact', head: true });
+
+                if (tag.id === '1st Payment') {
+                    tagQuery = tagQuery.or(`first_tranche_date.not.is.null,loan_status.ilike.%1st Payment%,financing_tag.ilike.%1st Payment%`);
+                } else if (tag.id === '2nd Payment') {
+                    tagQuery = tagQuery.or(`second_tranche_date.not.is.null,loan_status.ilike.%2nd Payment%,financing_tag.ilike.%2nd Payment%`);
+                } else {
+                    tagQuery = tagQuery.or(`loan_status.ilike.%${tag.id}%,financing_tag.ilike.%${tag.id}%,status.ilike.%${tag.id}%,portal_status.ilike.%${tag.id}%`);
+                }
 
                 if (targetPartner) {
                     tagQuery = tagQuery.or(`dealer.ilike.%${targetPartner}%,ref_agent.ilike.%${targetPartner}%`);
@@ -94,7 +101,11 @@ export default function LoanView({ onSelectCustomer, isChannelPartnerOffice, par
                 query = query.or(`dealer.ilike.%${targetPartner}%,ref_agent.ilike.%${targetPartner}%`);
             }
 
-            if (activeFilter) {
+            if (activeFilter === '1st Payment') {
+                query = query.or(`first_tranche_date.not.is.null,loan_status.ilike.%1st Payment%,financing_tag.ilike.%1st Payment%`);
+            } else if (activeFilter === '2nd Payment') {
+                query = query.or(`second_tranche_date.not.is.null,loan_status.ilike.%2nd Payment%,financing_tag.ilike.%2nd Payment%`);
+            } else if (activeFilter) {
                 query = query.or(`loan_status.ilike.%${activeFilter}%,financing_tag.ilike.%${activeFilter}%,status.ilike.%${activeFilter}%,portal_status.ilike.%${activeFilter}%`);
             }
 
@@ -262,7 +273,11 @@ export default function LoanView({ onSelectCustomer, isChannelPartnerOffice, par
                             const displayPhone = c.mobile_no || c.phone_number || '';
                             const displayConsumerNo = c.consumer_number || c.consumer_no || '';
                             const displayLocation = c.sub_division || c.circle || c.address || c.villages || '';
-                            const currentTag = c.loan_status || c.financing_tag || c.loan_tag || 'Inprocess';
+                            const currentTag = c.second_tranche_date
+                                ? '2nd Payment'
+                                : c.first_tranche_date
+                                    ? '1st Payment'
+                                    : (c.loan_status || c.financing_tag || c.loan_tag || 'Inprocess');
                             const normTag = normalizeLoanTag(currentTag);
                             const tagStyle = LOAN_TAG_COLORS[normTag] || { bg: 'bg-stone-100', text: 'text-stone-700', border: 'border-stone-200' };
                             const amount = c.loan_disbursed_amount || c.actual_payment || c.payment;
@@ -282,6 +297,15 @@ export default function LoanView({ onSelectCustomer, isChannelPartnerOffice, par
                                             <p className="text-[10px] text-stone-400 font-mono mt-0.5 truncate">
                                                 {[displayConsumerNo && `#${displayConsumerNo}`, displayLocation, displayPhone].filter(Boolean).join(' · ')}
                                             </p>
+                                            {c.second_tranche_date ? (
+                                                <p className="text-[10px] text-emerald-700 font-semibold mt-0.5">
+                                                    2nd Tranche: {c.second_tranche_date}
+                                                </p>
+                                            ) : c.first_tranche_date ? (
+                                                <p className="text-[10px] text-sky-700 font-semibold mt-0.5">
+                                                    1st Tranche: {c.first_tranche_date}
+                                                </p>
+                                            ) : null}
                                         </div>
                                         <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider flex-shrink-0 border ${tagStyle.bg} ${tagStyle.text} ${tagStyle.border}`}>
                                             {currentTag}

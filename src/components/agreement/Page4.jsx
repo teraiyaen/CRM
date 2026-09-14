@@ -55,12 +55,7 @@ export const Page4 = ({ data, fontSizeClass = 'text-[17px]' }) => {
           </div>
         </div>
 
-        <div className="flex gap-2.5 items-start pt-1">
-          <span className="font-normal flex-shrink-0 min-w-[24px]">19.</span>
-          <div className="flex-1">
-            <span className="font-normal">{data.paymentTerms || 'Mutually Agreed Terms of Payment …'}</span>
-          </div>
-        </div>
+
       </div>
 
       {/* Execution Signatures Table / Columns */}
@@ -74,18 +69,18 @@ export const Page4 = ({ data, fontSizeClass = 'text-[17px]' }) => {
             <div>
               <span className="font-semibold">Name: </span>
               <span className="font-normal" style={getHighlightStyle()}>
-                {data.consumerName || 'MALEK HUSENABEN IKBALBHAI'}
+                {data.consumerName || '________________'}
               </span>
             </div>
 
             <div>
               <span className="font-semibold">Address </span>
               <span>Vill: </span>
-              <span className="font-normal" style={getHighlightStyle()}>{data.village || 'RADHANPUR'}</span>
+              <span className="font-normal" style={getHighlightStyle()}>{data.village || '________________'}</span>
               <span> Tal: </span>
-              <span className="font-normal" style={getHighlightStyle()}>{data.taluka || 'RADHANPUR'}</span>
+              <span className="font-normal" style={getHighlightStyle()}>{data.taluka || '________________'}</span>
               <span> Dist: </span>
-              <span className="font-normal" style={getHighlightStyle()}>{data.district || 'PATAN'}</span>
+              <span className="font-normal" style={getHighlightStyle()}>{data.district || '________________'}</span>
             </div>
 
             {/* Signature Box */}
@@ -110,7 +105,7 @@ export const Page4 = ({ data, fontSizeClass = 'text-[17px]' }) => {
             <div className="pt-2">
               <span className="font-semibold">Date-</span>
               <span className="font-normal" style={getHighlightStyle()}>
-                {data.executionDate || '23-06-2026'}
+                {data.executionDate || '________________'}
               </span>
             </div>
           </div>
@@ -121,12 +116,12 @@ export const Page4 = ({ data, fontSizeClass = 'text-[17px]' }) => {
 
             <div>
               <span className="font-semibold">Name - </span>
-              <span className="font-normal">{data.vendorName || 'Teriyan Enterprises'}</span>
+              <span className="font-normal">{data.vendorName || '________________'}</span>
             </div>
 
             <div>
               <span className="font-semibold">Address- </span>
-              <span className="font-normal">{data.vendorAddress || 'Plot No. 12, GIDC Industrial Estate, Near Power Grid Substation, Radhanpur, Patan, Gujarat - 385340'}</span>
+              <span className="font-normal">{data.vendorAddress || '________________'}</span>
             </div>
 
             {/* Vendor Stamp & Signature Box — Enlarged by 30% and shifted center-right */}
@@ -156,7 +151,7 @@ export const Page4 = ({ data, fontSizeClass = 'text-[17px]' }) => {
             <div className="pt-2 text-right">
               <span className="font-semibold">Date:</span>
               <span className="font-normal" style={getHighlightStyle()}>
-                {data.executionDate || '23-06-2026'}
+                {data.executionDate || '________________'}
               </span>
             </div>
 

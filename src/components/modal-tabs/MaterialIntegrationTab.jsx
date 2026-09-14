@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ClipboardList, Save, Printer, ShoppingBag, User, Clock, AlertCircle, X, Layers, Zap, Copy, Check, ClipboardPaste, Plus, Trash2 } from 'lucide-react';
+import { ClipboardList, Save, Printer, ShoppingBag, User, Clock, AlertCircle, X, Layers, Zap, Copy, Check, ClipboardPaste, Plus, Trash2, Truck } from 'lucide-react';
 import { supabase } from '../../supabase';
 import { SectionHeader, EditableDetailItem } from './shared';
 import BomPrintModal from '../BomPrintModal';
+import CustomerBomDispatchModal from '../CustomerBomDispatchModal';
 import { ROOF_BOM_TEMPLATE, SHED_BOM_TEMPLATE, COMMON_BOM_ITEMS } from '../../constants';
 import { loadBomForCustomer, getBomTemplateForType } from '../../utils/bom';
 import { useGlobalPopup } from '../GlobalPopup';
@@ -148,6 +149,7 @@ export default function MaterialIntegrationTab({
     const isSerialsDirty = originalSerialized !== currentSerialized;
 
     const [showPrintModal, setShowPrintModal] = useState(false);
+    const [showDispatchModal, setShowDispatchModal] = useState(false);
 
     // Integration By dropdown options. No placeholder fallback - fabricated
     // names used to be offered when the list was empty, and anything picked
@@ -508,6 +510,14 @@ export default function MaterialIntegrationTab({
                             Saved
                         </span>
                     )}
+                    <button
+                        type="button"
+                        onClick={() => setShowDispatchModal(true)}
+                        className="bg-amber-500 hover:bg-amber-600 text-stone-950 px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer"
+                        title="Fill blank fields in the solar material list and print"
+                    >
+                        <Truck size={13} /> Solar Material List
+                    </button>
                     <button
                         type="button"
                         onClick={() => setShowPrintModal(true)}
@@ -1137,6 +1147,18 @@ export default function MaterialIntegrationTab({
                     bomItems={bomItems}
                     activeType={activeType}
                     onClose={() => setShowPrintModal(false)}
+                />
+            )}
+
+            {/* Outgoing Godown BOM Dispatch Modal */}
+            {showDispatchModal && (
+                <CustomerBomDispatchModal
+                    isOpen={showDispatchModal}
+                    onClose={() => setShowDispatchModal(false)}
+                    initialCustomer={{ ...customer, ...editData }}
+                    onDispatchComplete={() => {
+                        loadBOM();
+                    }}
                 />
             )}
         </div>

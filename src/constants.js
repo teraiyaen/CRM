@@ -76,23 +76,24 @@ export const SUBSIDY_TAG_COLORS = {
 };
 
 export const LOAN_TAGS = [
+    { id: '1st Payment', label: '1st Payment', icon: Banknote },
+    { id: '2nd Payment', label: '2nd Payment', icon: CheckCircle2 },
     { id: 'Disbursed', label: 'Disbursed', icon: CheckCircle2, isFinal: true },
     { id: 'Partial Disburse', label: 'Partial Disburse', icon: Banknote },
     { id: 'Sanctioned', label: 'Sanctioned', icon: CheckCircle2 },
-    { id: 'Inprocess', label: 'Inprocess', icon: Clock },
     { id: 'Reject', label: 'Reject', icon: AlertTriangle },
-    { id: 'Returned', label: 'Returned', icon: Clock },
 ];
 
 export const LOAN_TAG_COLORS = {
+    '1st Payment':      { bg: 'bg-sky-50',     text: 'text-sky-700',     border: 'border-sky-200',     dot: 'bg-sky-500' },
+    '2nd Payment':      { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', dot: 'bg-emerald-500' },
+    '1st Tranche':      { bg: 'bg-sky-50',     text: 'text-sky-700',     border: 'border-sky-200',     dot: 'bg-sky-500' },
+    '2nd Tranche':      { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', dot: 'bg-emerald-500' },
     'Disbursed':        { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', dot: 'bg-emerald-400' },
     'Partial Disburse': { bg: 'bg-blue-50',    text: 'text-blue-700',    border: 'border-blue-200',    dot: 'bg-blue-400' },
     'Sanctioned':       { bg: 'bg-indigo-50',  text: 'text-indigo-700',  border: 'border-indigo-200',  dot: 'bg-indigo-400' },
-    'Inprocess':        { bg: 'bg-teal-50',    text: 'text-teal-700',    border: 'border-teal-200',    dot: 'bg-teal-400' },
-    'In Process':       { bg: 'bg-teal-50',    text: 'text-teal-700',    border: 'border-teal-200',    dot: 'bg-teal-400' },
     'Reject':           { bg: 'bg-rose-50',    text: 'text-rose-700',    border: 'border-rose-200',    dot: 'bg-rose-400' },
     'Rejected':         { bg: 'bg-rose-50',    text: 'text-rose-700',    border: 'border-rose-200',    dot: 'bg-rose-400' },
-    'Returned':         { bg: 'bg-amber-50',   text: 'text-amber-700',   border: 'border-amber-200',   dot: 'bg-amber-400' },
     'All Clear':        { bg: 'bg-emerald-50', text: 'text-emerald-800', border: 'border-emerald-200', dot: 'bg-emerald-500' },
 };
 
@@ -404,6 +405,7 @@ export const ADMIN_COLUMNS = new Set([
     'inverter_capacity_kw',
     'dealer',
     'ref_agent',
+    'installation_vendor',
     'financing_tag',
     'is_reverified',
     'is_duplicate_sr_no',
@@ -415,6 +417,7 @@ export const ADMIN_COLUMNS = new Set([
     'dispatch_date',
     'actual_payment',
     'payment',
+    'payment_date',
     'payment_mode_raw',
     'meter_charge',
     'charge',
@@ -447,6 +450,7 @@ export const ADMIN_BOOLEAN_COLUMNS = [
 ];
 
 export const ADMIN_DATE_COLUMNS = [
+    'payment_date',
     'application_date',
     'submitted_on',
     'first_tranche_date',

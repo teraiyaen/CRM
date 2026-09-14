@@ -26,7 +26,12 @@ const MISUploadView = lazyWithRetry(() => import('./MISUploadView'));
 const UserManagementView = lazyWithRetry(() => import('./UserManagementView'));
 const TrashView = lazyWithRetry(() => import('./TrashView'));
 const ChannelPartnerManagementView = lazyWithRetry(() => import('./ChannelPartnerManagementView'));
+const DealerPaymentsView = lazyWithRetry(() => import('./PartnerPaymentsView'));
 const InstallationPaymentsView = lazyWithRetry(() => import('./InstallationPaymentsView'));
+const LeadsView = lazyWithRetry(() => import('./LeadsView'));
+const CustomerPaymentsView = lazyWithRetry(() => import('./CustomerPaymentsView'));
+const TemporaryStampView = lazyWithRetry(() => import('./TemporaryStampView'));
+const GodownInventoryView = lazyWithRetry(() => import('./GodownInventoryView'));
 // const DeliveryBatchesView = lazyWithRetry(() => import('./DeliveryBatchesView'));
 import { useGlobalPopup } from './GlobalPopup';
 import BrandMark from './BrandMark';
@@ -35,7 +40,7 @@ const ViewLoader = () => <div className="flex items-center justify-center h-64">
 
 import {
     LayoutDashboard, Activity, UserCog, Menu, X,
-    Search, Plus, Download, LogOut, Trash2, Users, Tag, IndianRupee, Wrench, CreditCard, FileSpreadsheet, Terminal, Truck
+    Search, Plus, Download, LogOut, Trash2, Users, Tag, IndianRupee, Wrench, CreditCard, FileSpreadsheet, Terminal, Truck, Warehouse, UserPlus
 } from 'lucide-react';
 
 // ── NavBtn ────────────────────────────────────────────────────────────────────
@@ -1099,11 +1104,16 @@ export default function Dashboard({ user, onLogout, onOpenDevSwitcher }) {
 
     const headerTitle =
         currentView === 'dashboard' ? 'Business Dashboard'
+            : currentView === 'leads' ? 'Leads Management'
+            : currentView === 'godown' ? 'Godown & Stock Inventory'
             : currentView === 'delivery_batches' ? 'Material Delivery Batches'
             : currentView === 'subsidy' ? 'Subsidy Tag Tracking'
+                : currentView === 'customer_payments' ? 'Customer Payments'
+                : currentView === 'stamp_upload' ? 'Stamp & Agreement'
                 : currentView === 'loan_tags' ? 'Loan Tag Tracking'
                 : currentView === 'installation_tags' ? 'Installation Tag Tracking'
                 : currentView === 'channel_partner_mgmt' ? 'Operations'
+                    : currentView === 'dealer_payments' ? 'Dealer Payments'
                     : currentView === 'installation_payments' ? 'Installation Payments'
                     : currentView === 'activity' ? 'Activity Log'
                         : currentView === 'users' ? 'User Management'
@@ -1132,12 +1142,12 @@ export default function Dashboard({ user, onLogout, onOpenDevSwitcher }) {
                     )} */}
                     {/* <NavBtn view="subsidy" icon={Tag} label="Subsidy Tags" count={subsidyTagCount} currentView={currentView} selectedStage={selectedStage} setCurrentView={setCurrentView} setSelectedStage={setSelectedStage} setSidebarOpen={setSidebarOpen} /> */}
                     <NavBtn view="loan_tags" icon={IndianRupee} label="Loan Tags" count={loanTagCount} currentView={currentView} selectedStage={selectedStage} setCurrentView={setCurrentView} setSelectedStage={setSelectedStage} setSidebarOpen={setSidebarOpen} />
-                    {/* <NavBtn view="installation_tags" icon={Wrench} label="Installation Tags" count={installationTagCount} currentView={currentView} selectedStage={selectedStage} setCurrentView={setCurrentView} setSelectedStage={setSelectedStage} setSidebarOpen={setSidebarOpen} /> */}
-
-
+                    <NavBtn view="stamp_upload" icon={FileSpreadsheet} label="Stamp & Agreement" count={0} currentView={currentView} selectedStage={selectedStage} setCurrentView={setCurrentView} setSelectedStage={setSelectedStage} setSidebarOpen={setSidebarOpen} />
+                    <NavBtn view="customer_payments" icon={IndianRupee} label="Customer Payments" count={0} currentView={currentView} selectedStage={selectedStage} setCurrentView={setCurrentView} setSelectedStage={setSelectedStage} setSidebarOpen={setSidebarOpen} />
 
                     {/* Project Stages - identical for every role */}
                     <div className="text-[9px] uppercase font-bold text-stone-300 px-3 pt-4 pb-2 tracking-widest">Project Stages</div>
+                    <NavBtn view="leads" icon={UserPlus} label="Leads" count={0} currentView={currentView} selectedStage={selectedStage} setCurrentView={setCurrentView} setSelectedStage={setSelectedStage} setSidebarOpen={setSidebarOpen} />
                     {PRIMARY_STAGES.map(s => (
                         <NavBtn key={s.id} view="stages" stage={s.id} icon={s.icon} label={s.label} count={stageCounts[s.id] || 0} currentView={currentView} selectedStage={selectedStage} setCurrentView={setCurrentView} setSelectedStage={setSelectedStage} setSidebarOpen={setSidebarOpen} />
                     ))}
@@ -1146,8 +1156,11 @@ export default function Dashboard({ user, onLogout, onOpenDevSwitcher }) {
                     {user.userType === 'admin' && (
                         <>
                             <div className="text-[9px] uppercase font-bold text-stone-300 px-3 pt-5 pb-2 tracking-widest">System</div>
-                            <NavBtn view="channel_partner_mgmt" icon={Users} label="Operations" count={0} currentView={currentView} selectedStage={selectedStage} setCurrentView={setCurrentView} setSelectedStage={setSelectedStage} setSidebarOpen={setSidebarOpen} />
                             <NavBtn view="activity" icon={Activity} label="Activity Log" count={0} currentView={currentView} selectedStage={selectedStage} setCurrentView={setCurrentView} setSelectedStage={setSelectedStage} setSidebarOpen={setSidebarOpen} />
+                            <NavBtn view="godown" icon={Warehouse} label="Godown Stock" count={0} currentView={currentView} selectedStage={selectedStage} setCurrentView={setCurrentView} setSelectedStage={setSelectedStage} setSidebarOpen={setSidebarOpen} />
+                            <NavBtn view="channel_partner_mgmt" icon={Users} label="Operations" count={0} currentView={currentView} selectedStage={selectedStage} setCurrentView={setCurrentView} setSelectedStage={setSelectedStage} setSidebarOpen={setSidebarOpen} />
+                            <NavBtn view="installation_payments" icon={IndianRupee} label="Installation Payments" count={0} currentView={currentView} selectedStage={selectedStage} setCurrentView={setCurrentView} setSelectedStage={setSelectedStage} setSidebarOpen={setSidebarOpen} />
+                            <NavBtn view="dealer_payments" icon={IndianRupee} label="Dealer Payments" count={0} currentView={currentView} selectedStage={selectedStage} setCurrentView={setCurrentView} setSelectedStage={setSelectedStage} setSidebarOpen={setSidebarOpen} />
                             <NavBtn view="mis_sync" icon={FileSpreadsheet} label="PM Surya Ghar MIS Sync" count={0} currentView={currentView} selectedStage={selectedStage} setCurrentView={setCurrentView} setSelectedStage={setSelectedStage} setSidebarOpen={setSidebarOpen} />
                             <NavBtn view="users" icon={UserCog} label="User Management" count={0} currentView={currentView} selectedStage={selectedStage} setCurrentView={setCurrentView} setSelectedStage={setSelectedStage} setSidebarOpen={setSidebarOpen} />
                         </>
@@ -1324,7 +1337,23 @@ export default function Dashboard({ user, onLogout, onOpenDevSwitcher }) {
                     {currentView === 'loan_tags' && <LoanView onSelectCustomer={setSelectedCustomer} isChannelPartnerOffice={isChannelPartnerOffice} partnerName={partnerName} channelPartnerFilter={channelPartnerFilter} />}
                     {/* {currentView === 'installation_tags' && <InstallationView onSelectCustomer={setSelectedCustomer} isChannelPartnerOffice={isChannelPartnerOffice} partnerName={partnerName} channelPartnerFilter={channelPartnerFilter} />} */}
 
+                    {currentView === 'leads' && (
+                        <LeadsView 
+                            currentUser={user} 
+                            onLeadConverted={(cust) => {
+                                setSelectedCustomer(cust);
+                                setCurrentView('stages');
+                                setSelectedStage(cust.stage || 'Upload Agreement (Pending)');
+                            }} 
+                        />
+                    )}
+                    {currentView === 'customer_payments' && <CustomerPaymentsView onSelectCustomer={setSelectedCustomer} />}
+                    {currentView === 'stamp_upload' && <TemporaryStampView />}
+                    {currentView === 'godown' && <GodownInventoryView />}
+
                     {currentView === 'channel_partner_mgmt' && user.userType === 'admin' && <ChannelPartnerManagementView currentUser={user} />}
+                    {currentView === 'installation_payments' && user.userType === 'admin' && <InstallationPaymentsView currentUser={user} onSelectCustomer={setSelectedCustomer} />}
+                    {currentView === 'dealer_payments' && user.userType === 'admin' && <DealerPaymentsView key="dealer" kind="dealer" currentUser={user} onSelectCustomer={setSelectedCustomer} />}
                     {currentView === 'activity' && <ActivityLogView />}
                     {currentView === 'mis_sync' && <MISUploadView role={user.userType} />}
                     {currentView === 'users' && (user.userType === 'admin' || user.userType === 'channel_partner_office') && <UserManagementView currentUser={user} />}
@@ -1385,7 +1414,7 @@ export default function Dashboard({ user, onLogout, onOpenDevSwitcher }) {
                     user={user}
                     meta={meta}
                     channel_partners={uniqueChannelPartners}
-                    defaultTab={currentView === 'subsidy' ? STAGE_IDS.SUBSIDY_STATUS : currentView === 'loan_tags' ? STAGE_IDS.LOAN : currentView === 'installation_tags' ? STAGE_IDS.INSTALLATION_STATUS : currentView === 'stages' ? selectedStage : undefined}
+                    defaultTab={currentView === 'customer_payments' ? 'finance' : currentView === 'subsidy' ? STAGE_IDS.SUBSIDY_STATUS : currentView === 'loan_tags' ? STAGE_IDS.LOAN : currentView === 'installation_tags' ? STAGE_IDS.INSTALLATION_STATUS : currentView === 'stages' ? selectedStage : undefined}
                 />
                 </Suspense>
             )}

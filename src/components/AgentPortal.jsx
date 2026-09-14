@@ -1,3 +1,4 @@
+import { AGREEMENT_COMPANY } from '../agreementCompany';
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../supabase';
 import { AgreementPreview } from './agreement/AgreementPreview';
@@ -873,9 +874,8 @@ export default function AgentPortal({ user, onLogout, onOpenDevSwitcher }) {
             village: selectedCust.villages || '',
             taluka: selectedCust.villages || '',
             district: selectedCust.sub_divisions || '',
-            vendorName: 'SolarFlow',
-            vendorAddress: 'Plot No 40 GIDC Estate Radhanpur',
-            paymentTerms: 'Mutually Agreed Terms of Payment',
+            vendorName: AGREEMENT_COMPANY.name,
+            vendorAddress: AGREEMENT_COMPANY.address,
             firstPartySignature: sigUrl || '',
             secondPartyStamp: stampUrl || './stamp.png',
             secondPartySignature: '',
