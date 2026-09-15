@@ -39,7 +39,7 @@ export default function BomPrintModal({ customer, bom, bomItems = [], activeType
             document.body.classList.remove('is-printing-document');
             document.title = prevDocTitle;
             if (document.body.contains(printPortal)) {
-                document.body.removeChild(printPortal);
+                printPortal.remove();
             }
             window.removeEventListener('afterprint', cleanup);
         };

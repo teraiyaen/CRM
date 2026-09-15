@@ -57,13 +57,14 @@ export default function CustomerSourceFields({ activeTab, customer, editData, ha
     const group = CUSTOMER_FIELD_GROUPS[activeTab] ? activeTab : 'basic';
     const choices = useOperationNames();
     const [mis, setMis] = useState(null);
+    const [misRequested, setMisRequested] = useState(false);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [showBom, setShowBom] = useState(false);
     useEffect(() => {
         let cancelled = false;
         setMis(null); setError('');
-        if (!customer?.application_number) return;
+        if (!misRequested || !customer?.application_number) return;
         setLoading(true);
         (async () => {
             try {
@@ -75,7 +76,7 @@ export default function CustomerSourceFields({ activeTab, customer, editData, ha
             finally { if (!cancelled) setLoading(false); }
         })();
         return () => { cancelled = true; };
-    }, [customer?.application_number]);
+    }, [customer?.application_number, misRequested]);
     return <div className="space-y-5">
         <section className="rounded-2xl border border-stone-200 bg-white p-5">
             {choices.error && <p role="alert" className="mb-3 text-xs text-red-700">Saved Operations names could not be loaded: {choices.error}</p>}
@@ -86,7 +87,7 @@ export default function CustomerSourceFields({ activeTab, customer, editData, ha
             {group === 'basic' && <ProjectVendor value={editData.installation_vendor} onChange={value => handleChange('installation_vendor', value)} isEditable={isEditable} onRequestEdit={onRequestEdit} saving={saving} />}
         </section>
         {group === 'technical' && <button className="rounded-xl bg-stone-900 px-4 py-2 text-sm text-white" onClick={() => setShowBom(true)}>Solar Material List</button>}
-        <details className="rounded-2xl border crm-surface bg-white p-5">
+        <details onToggle={event => { if (event.currentTarget.open) setMisRequested(true); }} className="rounded-2xl border crm-surface bg-white p-5">
             <summary className="cursor-pointer text-sm font-bold">PM Surya Ghar MIS · all source fields</summary>
             {loading ? <p className="mt-3 text-sm">Loading MIS…</p> : error ? <p role="alert" className="mt-3 text-sm text-red-700">MIS could not be loaded: {error}</p> : !mis ? <p className="mt-3 text-sm text-stone-500">No matching MIS record is available.</p> : <dl className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">{MIS_SOURCE_FIELDS.map(key => <div key={key}><dt className="text-xs font-semibold text-stone-500">{key.replaceAll('_',' ')}</dt><dd className="break-words text-sm">{mis[key] ?? '—'}</dd></div>)}</dl>}
         </details>

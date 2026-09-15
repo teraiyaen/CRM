@@ -721,7 +721,7 @@ export const downloadFileWithSaveAs = async (url, fileName) => {
     a.target = '_blank';
     document.body.appendChild(a);
     a.click();
-    document.body.removeChild(a);
+    a.remove();
 };
 
 // Returns { ok, error }. Previously swallowed every failure with console.error,

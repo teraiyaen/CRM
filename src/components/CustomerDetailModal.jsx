@@ -455,7 +455,7 @@ export default function CustomerDetailModal({ customer, onClose, onUpdate, onDel
             <div className="crm-surface bg-white rounded-[28px] shadow-2xl w-full max-w-5xl h-[94vh] overflow-hidden flex flex-col border border-stone-100">
 
                 {/* Header */}
-                <div className="bg-stone-900 px-6 py-5 flex justify-between items-center flex-shrink-0">
+                <div className="customer-modal-header px-6 py-5 flex justify-between items-center flex-shrink-0">
                     <div>
                         <div className="flex items-center gap-3">
                             <h2 className="text-xl font-bold text-white">{displayName}</h2>
@@ -493,7 +493,7 @@ export default function CustomerDetailModal({ customer, onClose, onUpdate, onDel
                 </div>
 
                 {/* 4 Clean Unified Navigation Tabs */}
-                <div className="flex bg-stone-900 px-6 gap-6 border-t border-white/5 flex-shrink-0 overflow-x-auto scrollbar-none whitespace-nowrap">
+                <div className="customer-modal-tabs flex px-6 gap-6 border-t border-white/5 flex-shrink-0 overflow-x-auto scrollbar-none whitespace-nowrap">
                     {UNIFIED_TABS.map(tab => (
                         <button 
                             key={tab.id} 
@@ -559,14 +559,14 @@ export default function CustomerDetailModal({ customer, onClose, onUpdate, onDel
 
                 {/* Footer Bar */}
                 {isEditable && (
-                    <div className="p-4 border-t border-stone-100 crm-surface bg-white flex-shrink-0 flex gap-3">
+                    <div className="customer-modal-footer p-4 border-t flex-shrink-0 flex gap-3">
                         <button
                             onClick={() => handleSave()}
                             disabled={saving}
                             className={`flex-1 py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-all text-xs cursor-pointer shadow-sm disabled:opacity-50 ${
                                 isFormDirty
-                                    ? "crm-primary-button bg-stone-900 text-white hover:bg-stone-800"
-                                    : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                                    ? "customer-save-unsaved"
+                                    : "customer-save-saved"
                             }`}
                         >
                             {saving ? (
@@ -588,7 +588,7 @@ export default function CustomerDetailModal({ customer, onClose, onUpdate, onDel
                             <button
                                 onClick={() => handleAdvanceStage()}
                                 disabled={saving}
-                                className="flex-1 py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-all text-xs bg-amber-500 hover:bg-amber-600 text-white shadow-md shadow-amber-500/10 cursor-pointer disabled:opacity-50"
+                                className="customer-advance-button flex-1 py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-all text-xs cursor-pointer disabled:opacity-50"
                             >
                                 {saving ? "Moving..." : `Save & Move to ${nextStageLabel}`}
                             </button>

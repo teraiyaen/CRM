@@ -5,12 +5,14 @@ import { COLLECTED_REFERRING_AGENTS } from '../utils/collectedReferringAgents';
 export default function ReferringAgentSelect({ value = '', onChange, disabled = false, label = 'Referring agent' }) {
     const id = useId();
     const [open, setOpen] = useState(false);
+    const [requested, setRequested] = useState(false);
     const [search, setSearch] = useState('');
     const [names,setNames] = useState(COLLECTED_REFERRING_AGENTS);
     const [error,setError] = useState('');
     const [loading,setLoading] = useState(true);
     const [revision,setRevision] = useState(0);
     useEffect(() => {
+        if (!requested) return;
         let cancelled=false;
         setLoading(true);setError('');
         (async()=>{
@@ -35,7 +37,7 @@ export default function ReferringAgentSelect({ value = '', onChange, disabled = 
             finally {if(!cancelled)setLoading(false);}
         })();
         return ()=>{cancelled=true;};
-    },[revision]);
+    },[revision, requested]);
     const options=[...new Set([...names,value].filter(Boolean))].sort((a,b)=>a.localeCompare(b));
     const filtered = options.filter(name => name.toLowerCase().includes(search.trim().toLowerCase()));
     function choose(name) {
@@ -51,7 +53,7 @@ export default function ReferringAgentSelect({ value = '', onChange, disabled = 
     }}>
         <label id={`${id}-label`} htmlFor={id} className="block text-xs font-semibold text-stone-700">{label}</label>
         <button id={id} type="button" disabled={disabled} aria-haspopup="listbox" aria-expanded={open && !disabled} aria-controls={`${id}-names`}
-            onClick={() => { setSearch(''); setOpen(!open); }}
+            onClick={() => { setRequested(true); setSearch(''); setOpen(!open); }}
             className="flex w-full items-center justify-between gap-2 rounded-lg border border-brand-200 bg-white px-3 py-2 text-left text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-50">
             <span>{value || 'Select referring agent'}</span><span aria-hidden="true">▾</span>
         </button>
@@ -78,7 +80,7 @@ export default function ReferringAgentSelect({ value = '', onChange, disabled = 
             </div>
             {!filtered.length && <p className="px-3 py-2 text-sm text-stone-500">No matching agents. Add a name in Operations.</p>}
         </div>}
-        <div className="flex items-center justify-between gap-2"><p className="text-xs text-stone-500">{loading?'Loading saved names…':'Select a name, or add one in Operations.'}</p><button type="button" disabled={disabled || loading} onClick={()=>setRevision(n=>n+1)} className="text-xs font-semibold text-brand-700 underline disabled:opacity-50">Refresh</button></div>
+        <div className="flex items-center justify-between gap-2"><p className="text-xs text-stone-500">{requested && loading?'Loading saved names…':'Select a name, or add one in Operations.'}</p><button type="button" disabled={disabled || (requested && loading)} onClick={()=>{setRequested(true);setRevision(n=>n+1);}} className="text-xs font-semibold text-brand-700 underline disabled:opacity-50">Refresh</button></div>
         {error&&<p role="status" className="text-xs text-amber-800">Showing collected names. Live names could not be loaded: {error}</p>}
     </div>;
 }

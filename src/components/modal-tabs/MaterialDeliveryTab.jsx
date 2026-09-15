@@ -98,7 +98,7 @@ export default function MaterialDeliveryTab({
             document.body.classList.remove('is-printing-document');
             document.title = prevDocTitle;
             if (document.body.contains(printPortal)) {
-                document.body.removeChild(printPortal);
+                printPortal.remove();
             }
             window.removeEventListener('afterprint', cleanup);
         };

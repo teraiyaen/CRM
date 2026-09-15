@@ -551,7 +551,7 @@ export function CheckboxRemarkItem({ label, field, value, onChange, isEditing, d
                 a.target = '_blank';
                 document.body.appendChild(a);
                 a.click();
-                document.body.removeChild(a);
+                a.remove();
             }
         } catch (err) {
             console.error('Download error:', err);
