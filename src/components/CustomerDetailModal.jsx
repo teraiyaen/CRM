@@ -423,6 +423,7 @@ export default function CustomerDetailModal({ customer, onClose, onUpdate, onDel
         setEditData: handleEditDataChange,
         handleChange,
         isEditable,
+        onRequestEdit: isAdmin && isFrozen ? () => setAdminUnlocked(true) : undefined,
         editingSection,
         setEditingSection,
         channel_partners,

@@ -38,18 +38,19 @@ export const TERAIYA_BOM_DEFAULT_ITEMS = [
 ];
 
 export const createTeraiyaBomItems = () => [
-    ...TERAIYA_BOM_DEFAULT_ITEMS.map(item => ({ ...item, detail: '' })),
+    ...TERAIYA_BOM_DEFAULT_ITEMS.map(item => ({ ...item, mergeLastColumns: false, detail: '' })),
     ...Array.from({ length: 4 }, (_, index) => ({ sr: 35 + index, name: '', col1: '', col2: '', col3: '', unit: '', remark: '', detail: '' })),
 ];
 export function isFixedBomCell(sr, key) {
+    if (['col1', 'col2', 'col3'].includes(key)) return false;
     const row = TERAIYA_BOM_DEFAULT_ITEMS.find(item => item.sr === sr);
     return Boolean(row && row[key] !== undefined && row[key] !== '');
 }
-// Fixed template cells cannot be overridden by form or previously stored values.
+// Material labels and units stay fixed; entered quantities survive saving and printing.
 export function resolveTeraiyaBomItems(items) {
     return createTeraiyaBomItems().map(base => {
         const entered = items?.find(item => item.sr === base.sr) || {};
-        const row = { ...base };
+        const row = { ...base, mergeLastColumns: entered.mergeLastColumns ?? base.mergeLastColumns };
         for (const key of ['name', 'col1', 'col2', 'col3', 'unit', 'remark', 'detail']) {
             if (!isFixedBomCell(base.sr, key)) row[key] = entered[key] ?? base[key];
         }
@@ -58,4 +59,18 @@ export function resolveTeraiyaBomItems(items) {
 }
 export function materialDescription(item) {
     return item.detail ? item.name.replace(/(MAKE:|ML:|SIZE:)\s*/, '$1 ' + item.detail + ' ') : item.name;
+}
+
+// Fill only missing quantities. Reference values are not a capacity-based design.
+export function autofillBomQuantities(items) {
+    return items.map(item => {
+        if (item.sr < 1 || item.sr > 34) return item;
+        const reference = TERAIYA_BOM_DEFAULT_ITEMS.find(row => row.sr === item.sr);
+        const fallback = ['col1', 'col2', 'col3'].map(key => reference?.[key]).find(value => String(value ?? '').trim() !== '') || '0';
+        const next = { ...item, mergeLastColumns: false };
+        for (const key of ['col1', 'col2', 'col3']) {
+            if (String(item[key] ?? '').trim() === '') next[key] = reference?.[key] || fallback;
+        }
+        return next;
+    });
 }

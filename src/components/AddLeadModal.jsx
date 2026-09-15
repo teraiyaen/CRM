@@ -2,8 +2,11 @@ import React, { useState } from 'react';
 import { X, User, Phone, Mail, MapPin, Zap, Building2, ShieldCheck, IndianRupee, Save, Plus } from 'lucide-react';
 import { supabase } from '../supabase';
 import { PORTAL_STATUSES } from '../constants';
+import useOperationNames from '../hooks/useOperationNames';
+import { operationNames } from '../utils/operationNames';
 
 export default function AddLeadModal({ isOpen, onClose, onCustomerAdded, currentUser }) {
+    const choices = useOperationNames(isOpen);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState(null);
 
@@ -248,6 +251,7 @@ export default function AddLeadModal({ isOpen, onClose, onCustomerAdded, current
                         </div>
                     </div>
 
+                    {choices.error && <p role="alert" className="text-xs text-red-700">Saved Operations names could not be loaded: {choices.error}</p>}
                     {/* Technical Specs */}
                     <div className="pt-4 border-t border-stone-200">
                         <h3 className="text-xs font-bold text-amber-700 uppercase tracking-wider mb-3 flex items-center gap-1.5">
@@ -272,11 +276,7 @@ export default function AddLeadModal({ isOpen, onClose, onCustomerAdded, current
                                     onChange={(e) => handleChange('panel_brand', e.target.value)}
                                     className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-amber-400 focus:outline-none"
                                 >
-                                    <option value="Waaree Energies Limited">Waaree Energies Limited</option>
-                                    <option value="Mundra Solar Energy Limited">Mundra Solar Energy Limited (Adani)</option>
-                                    <option value="Renewsys">Renewsys Solar</option>
-                                    <option value="Tata Power Renewable Energy Limited">Tata Power Solar</option>
-                                    <option value="Goldi Solar">Goldi Solar</option>
+                                    {operationNames(choices.rows, 'module_brand', form.panel_brand).map(name => <option key={name} value={name}>{name}</option>)}
                                 </select>
                             </div>
 
@@ -307,11 +307,7 @@ export default function AddLeadModal({ isOpen, onClose, onCustomerAdded, current
                                     onChange={(e) => handleChange('inverter_brand', e.target.value)}
                                     className="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-amber-400 focus:outline-none"
                                 >
-                                    <option value="POLYCAB">POLYCAB</option>
-                                    <option value="SOLARYAAN">SOLARYAAN</option>
-                                    <option value="GROWATT">GROWATT</option>
-                                    <option value="HAVELLS">HAVELLS</option>
-                                    <option value="SOLAX">SOLAX</option>
+                                    {operationNames(choices.rows, 'inverter_make', form.inverter_brand).map(name => <option key={name} value={name}>{name}</option>)}
                                 </select>
                             </div>
 

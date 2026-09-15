@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { Printer, X } from 'lucide-react';
 import { supabase } from '../supabase';
 import { saveGeneratedDocument } from '../utils/generatedDocuments';
-import { sampleBomMovements, SAMPLE_BOM_DETAILS } from '../utils/sampleBom';
+import { bomStockMovements } from '../utils/bomStock';
 import TeraiyaBomPrintModal from './TeraiyaBomPrintModal';
-import { TERAIYA_BOM_HEADINGS, createTeraiyaBomItems, isFixedBomCell } from '../teraiyaBomTemplate';
+import { TERAIYA_BOM_HEADINGS, createTeraiyaBomItems, isFixedBomCell, autofillBomQuantities } from '../teraiyaBomTemplate';
 
 const emptyDetails = () => ({ vehicleNo: '', driverName: '', driverContact: '', dealerName: '', dispatchedBy: '', approvedBy: '', portalCharge: '', meterFee: '', materialCondition: '', customerSign: '' });
 const detailLabels = {
@@ -26,23 +26,14 @@ export default function CustomerBomDispatchModal({ isOpen, onClose, initialCusto
     const [inventory,setInventory] = useState([]);
     const [stockError,setStockError] = useState('');
     const [stockLoading,setStockLoading] = useState(false);
-    const [movements,setMovements] = useState([]);
     const [saving,setSaving] = useState(false);
     const [saved,setSaved] = useState(null);
     const requestId = useRef(null);
     const saveLock = useRef(false);
     const [autofillNotice, setAutofillNotice] = useState('');
-    function autofillSample() {
-        try {
-            const sampleMovements = sampleBomMovements(inventory);
-            setMovements(sampleMovements);
-            setDetails(previous => Object.fromEntries(Object.keys(previous).map(key => [key, previous[key] || SAMPLE_BOM_DETAILS[key] || ''])));
-            setItems(previous => previous.map(item => ({ ...item,
-                detail: item.detail || (/MAKE:/.test(item.name) ? 'SAMPLE MAKE' : /ML:/.test(item.name) ? '400' : /SIZE:/.test(item.name) ? '35 mm' : ''),
-            })));
-            setError('');
-            setAutofillNotice('Sample details and 10 sample stock lines filled. Select a customer and review before creating. Stock has not been deducted.');
-        } catch (err) { setError(err.message); setAutofillNotice(''); }
+    function autofillQuantities() {
+        setItems(previous => autofillBomQuantities(previous));
+        setAutofillNotice('All three quantity columns filled for the 34 materials. Existing entries were kept. Review these reference quantities for this project before creating the BOM.');
     }
     useEffect(()=>{
         if(!isOpen)return;let cancelled=false;setStockLoading(true);setStockError('');
@@ -51,7 +42,11 @@ export default function CustomerBomDispatchModal({ isOpen, onClose, initialCusto
     },[isOpen]);
     async function createBom(){
         if(saveLock.current||saved)return;
-        if(!customer||!movements.length||movements.some(row=>!row.inventory_id||!row.quantity||!Number.isFinite(Number(row.quantity))||Number(row.quantity)<=0)){setError('Select stock items and enter positive quantities to dispatch.');return;}
+        if (!customer) { setError('Select a customer first.'); return; }
+        if (stockLoading || stockError) { setError(stockError || 'Wait for Godown stock to load.'); return; }
+        let movements;
+        try { movements = bomStockMovements(items, inventory); }
+        catch (err) { setError(err.message); return; }
         saveLock.current=true;setSaving(true);setError('');
         try{const record=await saveGeneratedDocument({id:requestId.current,kind:'bom',customerId:customer.id,snapshot:{version:1,customer:{consumer_name:customer.consumer_name,consumer_number:customer.consumer_number,proposed_capacity_kw:customer.proposed_capacity_kw},items,details},movements:movements.map(row=>({...row,quantity:Number(row.quantity)}))});setSaved(record);setShowPrint(true);onCreated?.();}
         catch(err){setError(`BOM was not confirmed: ${err.message}. If setup is missing, run setup_godown_documents.sql.`);}
@@ -67,7 +62,7 @@ export default function CustomerBomDispatchModal({ isOpen, onClose, initialCusto
         setResults([]);
         setError('');
         setAutofillNotice('');
-        setShowPrint(false);setMovements([]);setSaved(null);requestId.current=crypto.randomUUID();
+        setShowPrint(false);setSaved(null);requestId.current=crypto.randomUUID();
     }, [isOpen, initialCustomer]);
 
     useEffect(() => {
@@ -112,10 +107,10 @@ export default function CustomerBomDispatchModal({ isOpen, onClose, initialCusto
                     <button disabled={saving} aria-label="Close material list" onClick={onClose}><X size={20} /></button>
                 </header>
                 <div className="overflow-y-auto p-5"><fieldset disabled={saving||Boolean(saved)} className="space-y-5">
-                    <p className="text-sm text-stone-600">The names and filled values from the supplied list are fixed. Enter project details in the blank fields.</p>
-                    <div className="space-y-2"><button disabled={stockLoading || Boolean(stockError)} className="rounded-lg border border-amber-400 bg-amber-50 px-4 py-2 text-sm font-semibold disabled:opacity-50" onClick={autofillSample}>Autofill sample BOM</button><p className="text-xs text-stone-500">Fills blank test details and replaces dispatch lines with sample stock. Your selected customer and fixed template values stay unchanged.</p></div>
+                    <p className="text-sm text-stone-600">Review and edit the quantities under each name. Material names and units follow the supplied list.</p>
+                    <div className="space-y-2"><button type="button" className="rounded-lg border border-amber-400 bg-amber-50 px-4 py-2 text-sm font-semibold disabled:opacity-50" onClick={autofillQuantities}>Autofill quantities</button><p className="text-xs text-stone-500">Fills blank cells in all three columns from the material’s reference quantities; uses 0 when no quantity is supplied. Review for the project capacity before dispatch.</p></div>
                     {autofillNotice && <p role="status" className="text-sm text-amber-800">{autofillNotice}</p>}
-                    <p role="status" className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">Choose the stock quantities to dispatch below. Create BOM saves the document values, deducts stock once, and adds its download link to Activity Log. Previewing or downloading again never deducts stock.</p>
+                    <p role="status" className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">Create BOM adds the three quantity columns for each material and deducts that total from Godown once, using the unit shown. Previewing or downloading again does not deduct stock.</p>
                     {error&&<p role="alert" className="text-sm text-red-700">{error}</p>}
                     {saved&&<p role="status" className="text-sm text-green-700">BOM saved and stock dispatched. Download it again from Godown or Activity Log.</p>}
                     {customer ? <div className="flex items-center justify-between rounded-xl bg-stone-50 p-3">
@@ -141,15 +136,13 @@ export default function CustomerBomDispatchModal({ isOpen, onClose, initialCusto
                             </tr>)}</tbody>
                         </table>
                     </div>
-                    <section className="space-y-3 rounded-xl border p-4"><h3 className="font-bold">Stock to dispatch</h3><p className="text-xs text-stone-500">Select the actual Godown items and quantities. The fixed reference cells above are not automatically counted as stock.</p>{stockLoading&&<p>Loading stock…</p>}{stockError&&<p role="alert" className="text-red-700">{stockError}</p>}
-                        {movements.map((row,index)=><div key={index} className="flex flex-wrap gap-2"><select aria-label={`Stock item ${index+1}`} className="min-w-64 flex-1 rounded-lg border p-2 text-xs" value={row.inventory_id} onChange={e=>setMovements(previous=>previous.map((line,i)=>i===index?{...line,inventory_id:e.target.value}:line))}><option value="">Select stock item</option>{inventory.map(item=><option key={item.id} value={item.id}>{item.is_sample?'[SAMPLE] ':''}{item.material_description} · {item.in_stock} {item.unit} available</option>)}</select><input aria-label={`Dispatch quantity ${index+1}`} type="number" min="0.01" step="0.01" placeholder="Quantity" className="w-28 rounded-lg border p-2 text-xs" value={row.quantity} onChange={e=>setMovements(previous=>previous.map((line,i)=>i===index?{...line,quantity:e.target.value}:line))}/><button onClick={()=>setMovements(previous=>previous.filter((_,i)=>i!==index))}>Remove line</button></div>)}
-                        <button disabled={stockLoading||Boolean(stockError)} className="rounded-lg border px-3 py-2 text-xs" onClick={()=>setMovements(previous=>[...previous,{inventory_id:'',quantity:''}])}>Add stock item</button>
-                    </section>
+                    {stockLoading && <p className="text-xs text-stone-500">Loading Godown stock…</p>}
+                    {stockError && <p role="alert" className="text-sm text-red-700">Godown stock could not be loaded: {stockError}</p>}
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">{Object.entries(detailLabels).map(([key, label]) => <label key={key} className="space-y-1 text-xs font-semibold"><span>{label}</span><input className={inputClass} value={details[key]} onChange={event => setDetails(previous => ({ ...previous, [key]: event.target.value }))} /></label>)}</div>
                 </fieldset></div>
                 <footer className="flex justify-end gap-3 border-t bg-stone-50 p-4">
                     <button disabled={saving} onClick={onClose} className="rounded-lg border px-4 py-2 text-sm">Close</button>
-                    {!saved&&<button disabled={saving||stockLoading||Boolean(stockError)||!customer||!movements.length} onClick={createBom} className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-bold disabled:opacity-50">{saving?'Creating…':'Create BOM & dispatch stock'}</button>}
+                    {!saved&&<button disabled={saving||stockLoading||Boolean(stockError)||!customer} onClick={createBom} className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-bold disabled:opacity-50">{saving?'Creating…':'Create BOM & dispatch stock'}</button>}
                     <button disabled={!customer||saving} onClick={() => setShowPrint(true)} className="flex items-center gap-2 rounded-lg bg-stone-900 px-4 py-2 text-sm text-white disabled:opacity-40"><Printer size={16} /> Preview / Print PDF</button>
                 </footer>
             </section>

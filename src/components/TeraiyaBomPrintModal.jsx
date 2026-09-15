@@ -11,7 +11,6 @@ export default function TeraiyaBomPrintModal({
     customer = {},
     customItems = null,
     snapshotItems = false,
-    stockIssued = [],
     vehicleNo = '',
     driverName = '',
     driverContact = '',
@@ -134,7 +133,6 @@ export default function TeraiyaBomPrintModal({
                             </tbody>
                         </table>
 
-                        {stockIssued.length>0&&<section className="mt-3"><h2 className="font-bold">Stock issued</h2><table className="w-full border-collapse text-[10px]"><thead><tr><th className="border border-black p-1 text-left">Material</th><th className="border border-black p-1">Quantity</th><th className="border border-black p-1">Unit</th></tr></thead><tbody>{stockIssued.map(line=><tr key={line.inventory_id}><td className="border border-black p-1">{line.name}</td><td className="border border-black p-1 text-center">{line.quantity}</td><td className="border border-black p-1 text-center">{line.unit}</td></tr>)}</tbody></table></section>}
                         {/* Sign-off Details Box */}
                         <div className="mt-3 border-2 border-black grid grid-cols-2 divide-x-2 divide-black text-[11px] font-bold">
                             <div className="divide-y divide-black">
