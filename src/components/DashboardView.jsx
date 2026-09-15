@@ -20,7 +20,7 @@ const MetricBox = ({ label, value, sub, icon: Icon, color }) => {
         blue:    'bg-blue-50 text-blue-600',
     };
     return (
-        <div className="bg-white p-6 rounded-[28px] border border-stone-100 shadow-sm">
+        <div className="crm-surface bg-white p-6 rounded-[28px] border border-stone-100 shadow-sm">
             <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-3 ${colorMap[color]}`}>
                 <Icon size={16} />
             </div>
@@ -70,7 +70,7 @@ export default function DashboardView({ metrics, loading }) {
             </div>
 
             {/* Financial / Payment Mode Analytics */}
-            <div className="bg-white rounded-[32px] p-8 border border-stone-100 shadow-sm">
+            <div className="crm-surface bg-white rounded-[32px] p-8 border border-stone-100 shadow-sm">
                 <div className="flex justify-between items-center mb-6">
                     <h3 className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Payment & Financing Breakdown</h3>
                     <span className="text-[10px] font-bold text-stone-500 bg-stone-100 px-2.5 py-1 rounded-full">
@@ -149,7 +149,7 @@ export default function DashboardView({ metrics, loading }) {
             </div>
 
             {/* Stage pipeline bar chart */}
-            <div className="bg-white rounded-[32px] p-8 border border-stone-100 shadow-sm">
+            <div className="crm-surface bg-white rounded-[32px] p-8 border border-stone-100 shadow-sm">
                 <h3 className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-8">Operational Density (Stage Breakdown)</h3>
                 <div className="space-y-5">
                     {PRIMARY_STAGES.map(stage => {

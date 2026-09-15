@@ -1,3 +1,4 @@
+import { customerStatusLabel, recordedCustomerStatus } from '../utils/customerStatus';
 // ─── Dashboard.jsx ────────────────────────────────────────────────────────────
 // Main admin layout: sidebar + header + view router.
 // Features:
@@ -54,12 +55,12 @@ const NavBtn = ({ view, stage, icon: Icon, label, count, redBadge, currentView, 
                 if (view === 'stages') { setCurrentView('stages'); setSelectedStage(stage); }
                 else setCurrentView(view);
             }}
-            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold mb-0.5 transition-colors cursor-pointer ${isActive ? 'bg-stone-900 text-white' : 'text-stone-600 hover:bg-stone-100'}`}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold mb-0.5 transition-colors cursor-pointer ${isActive ? 'crm-nav-active bg-brand-500 text-brand-950 shadow-sm ring-1 ring-brand-600/20' : 'text-stone-600 hover:bg-brand-50'}`}
         >
             <Icon className="w-4 h-4 flex-shrink-0" />
             <span className="flex-1 text-left truncate">{label}</span>
             {count > 0 && (
-                <span className={`text-[10px] px-1.5 py-0.5 rounded-full min-w-[20px] text-center font-bold ${isActive ? 'bg-white/20 text-white' : redBadge ? 'bg-red-100 text-red-500' : 'bg-stone-100 text-stone-500'}`}>
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-full min-w-[20px] text-center font-bold ${isActive ? 'bg-sunshine-500 text-brand-950' : redBadge ? 'bg-red-100 text-red-500' : 'bg-stone-100 text-stone-500'}`}>
                     {count}
                 </span>
             )}
@@ -85,9 +86,9 @@ export default function Dashboard({ user, onLogout, onOpenDevSwitcher }) {
     const [selectedStage, setSelectedStage] = useState(() => {
         if (typeof window !== 'undefined') {
             const saved = window.sessionStorage.getItem('solarflow_selected_stage');
-            if (saved && saved !== 'ALL') return saved;
+            if (saved && saved !== 'ALL') return saved === 'REGISTRATION' ? 'Registration' : saved;
         }
-        return 'REGISTRATION';
+        return 'Registration';
     });
 
     const [stageSearch, setStageSearch] = useState('');    // per-stage search
@@ -255,7 +256,7 @@ export default function Dashboard({ user, onLogout, onOpenDevSwitcher }) {
 
             let query = supabase
                 .from('admin')
-                .select('status, portal_status, dealer, ref_agent, proposed_capacity_kw, loan_status, financing_tag, payment_mode_raw', { count: 'exact' });
+                .select('status, portal_status, sources, dealer, ref_agent, proposed_capacity_kw, loan_status, financing_tag, payment_mode_raw', { count: 'exact' });
 
             if (isChannelPartnerOffice) {
                 query = query.or(`dealer.ilike.%${partnerName}%,ref_agent.ilike.%${partnerName}%`);
@@ -291,7 +292,7 @@ export default function Dashboard({ user, onLogout, onOpenDevSwitcher }) {
                         pendingPaymentCount++;
                     }
 
-                    const rawStatus = (row.portal_status || row.status || 'Vender Selection').trim();
+                    const rawStatus = recordedCustomerStatus(row) || 'Registration';
                     let matched = PRIMARY_STAGES.find(s => s.id.toLowerCase() === rawStatus.toLowerCase())?.id;
                     
                     if (!matched) {
@@ -304,6 +305,7 @@ export default function Dashboard({ user, onLogout, onOpenDevSwitcher }) {
                         else if (sUp.includes('INSPECT') && sUp.includes('PENDING')) matched = 'Inspection (Pending)';
                         else if (sUp.includes('INSPECT')) matched = 'Inspection';
                         else if (sUp.includes('INSTALL')) matched = 'Installation';
+                        else if (sUp.includes('REGIST')) matched = 'Registration';
                         else if (sUp.includes('AGREEMENT') && sUp.includes('PENDING')) matched = 'Upload Agreement (Pending)';
                         else if (sUp.includes('AGREEMENT') || sUp.includes('UPLOAD')) matched = 'Upload Agreement';
                         else matched = 'Vender Selection';
@@ -362,9 +364,11 @@ export default function Dashboard({ user, onLogout, onOpenDevSwitcher }) {
 
             if (stage) {
                 if (stage === 'Vender Selection') {
-                    query = query.or('portal_status.eq."Vender Selection",status.eq."Vender Selection",portal_status.ilike.%Vender%,status.ilike.%Vender%,portal_status.ilike.%Vendor%,status.ilike.%Vendor%,portal_status.ilike.%Regist%,status.ilike.%Regist%,portal_status.is.null');
+                    query = query.or('portal_status.ilike.%Vender%,portal_status.ilike.%Vendor%,portal_status.ilike.Converted,and(portal_status.is.null,or(status.ilike.%Vender%,status.ilike.%Vendor%,status.ilike.Converted))');
+                } else if (stage === 'Registration') {
+                    query = query.or('portal_status.ilike.%Regist%,and(or(portal_status.is.null,portal_status.eq.""),status.ilike.%Regist%),and(or(portal_status.is.null,portal_status.eq.""),or(status.is.null,status.eq.""))');
                 } else {
-                    query = query.or(`portal_status.eq."${stage}",status.eq."${stage}"`);
+                    query = query.or(`portal_status.eq."${stage}",and(portal_status.is.null,status.eq."${stage}")`);
                 }
             }
 
@@ -1121,11 +1125,11 @@ export default function Dashboard({ user, onLogout, onOpenDevSwitcher }) {
                             : PRIMARY_STAGES.find(s => s.id === selectedStage)?.label || selectedStage;
 
     return (
-        <div className="min-h-screen bg-[#FCFBFA] flex">
+        <div className="min-h-screen bg-stone-50 flex">
             {sidebarOpen && <div className="fixed inset-0 bg-black/40 z-40 md:hidden" onClick={() => setSidebarOpen(false)} />}
 
             {/* ── Sidebar ── */}
-            <aside className={`fixed top-0 bottom-0 left-0 z-50 w-64 bg-white border-r border-stone-100 flex flex-col h-screen max-h-screen overflow-hidden transform transition-transform duration-300 ${sidebarOpen ? 'flex' : 'hidden'} md:flex`}>
+            <aside className={`fixed top-0 bottom-0 left-0 z-50 w-64 crm-surface bg-white border-r border-stone-100 flex flex-col h-screen max-h-screen overflow-hidden transform transition-transform duration-300 ${sidebarOpen ? 'flex' : 'hidden'} md:flex`}>
                 <div className="p-5 border-b border-stone-100 flex justify-between items-center shrink-0">
                     <BrandMark size="md" />
                     <button className="md:hidden text-stone-400" onClick={() => setSidebarOpen(false)}><X className="w-5 h-5" /></button>
@@ -1176,7 +1180,7 @@ export default function Dashboard({ user, onLogout, onOpenDevSwitcher }) {
                 </div>
 
                 {/* User + Logout */}
-                <div className="p-3 border-t border-stone-100 shrink-0 bg-white">
+                <div className="p-3 border-t border-stone-100 shrink-0 crm-surface bg-white">
                     <div className="flex items-center gap-3 px-3 py-2 mb-1">
                         <div className="w-8 h-8 bg-stone-900 rounded-full flex items-center justify-center text-white text-xs font-bold">
                             {user.name?.split(' ').map(n => n[0]).join('').slice(0, 2) || 'A'}
@@ -1200,7 +1204,7 @@ export default function Dashboard({ user, onLogout, onOpenDevSwitcher }) {
             </aside>
 
             {/* ── Main ── */}
-            <main className="flex-1 md:ml-64 flex flex-col min-h-screen">
+            <main className={`crm-workspace ${currentView === 'dashboard' ? 'crm-home' : ''} flex-1 md:ml-64 flex flex-col min-h-screen`}>
                 {/* Header */}
                 <header className="h-16 bg-white/90 backdrop-blur-md border-b border-stone-100 px-4 lg:px-6 flex items-center justify-between sticky top-0 z-30">
                     <div className="flex items-center gap-3">
@@ -1226,7 +1230,7 @@ export default function Dashboard({ user, onLogout, onOpenDevSwitcher }) {
                             />
                             {/* Results dropdown */}
                             {showGlobalDrop && (
-                                <div className="absolute top-full mt-1 left-0 right-0 bg-white rounded-2xl shadow-xl border border-stone-100 py-1 z-50 overflow-hidden">
+                                <div className="absolute top-full mt-1 left-0 right-0 crm-surface bg-white rounded-2xl shadow-xl border border-stone-100 py-1 z-50 overflow-hidden">
                                     {globalResults.map(c => (
                                         <button key={c.id} onClick={() => handleGlobalSelect(c)}
                                              className="w-full px-4 py-2.5 text-left hover:bg-amber-50 transition-colors group">
@@ -1235,7 +1239,7 @@ export default function Dashboard({ user, onLogout, onOpenDevSwitcher }) {
                                                 <span className="text-[10px] font-mono text-stone-400">#{c.consumer_number || c.consumer_no || ''}</span>
                                             </div>
                                             <p className="text-[10px] text-stone-400 mt-0.5">
-                                                {c.portal_status || c.status || c.stage || '1. Registration'} · {c.mobile_no || c.phone_number || 'No phone'}
+                                                {customerStatusLabel(c)} · {c.mobile_no || c.phone_number || 'No phone'}
                                             </p>
                                         </button>
                                     ))}
@@ -1244,7 +1248,7 @@ export default function Dashboard({ user, onLogout, onOpenDevSwitcher }) {
                         </div>
 
                         {/* Per-stage search (only in stages view) */}
-                        {currentView === 'stages' && (
+                    {currentView === 'stages' && (
                             <div className="relative hidden lg:block">
                                 <Search className="absolute left-3 top-2.5 text-stone-400 w-4 h-4" />
                                 <input type="text" readOnly onFocus={(e) => e.target.removeAttribute('readonly')}  name="crm_dash_stage_search_unique" autoComplete="off" autoCorrect="off" spellCheck="false" placeholder="Filter this stage..." value={stageSearch} onChange={e => setStageSearch(e.target.value)}
@@ -1269,7 +1273,7 @@ export default function Dashboard({ user, onLogout, onOpenDevSwitcher }) {
                                         setChannelPartnerFilter(channelPartnerFilterInput.trim());
                                         setShowChannelPartnerDrop(false);
                                     }}
-                                    className="px-3 py-2 rounded-xl text-xs font-medium bg-stone-900 text-white hover:bg-stone-800 transition-colors">
+                                    className="px-3 py-2 rounded-xl text-xs font-medium crm-primary-button bg-stone-900 text-white hover:bg-stone-800 transition-colors">
                                     Apply
                                 </button>
                                 {(channelPartnerFilter || channelPartnerFilterInput) && (
@@ -1284,7 +1288,7 @@ export default function Dashboard({ user, onLogout, onOpenDevSwitcher }) {
                                     </button>
                                 )}
                                 {showChannelPartnerDrop && channelPartnerSuggestions.length > 0 && (
-                                    <div className="absolute top-full mt-1 left-0 w-48 bg-white rounded-xl shadow-xl border border-stone-100 py-1 z-50 max-h-48 overflow-y-auto">
+                                    <div className="absolute top-full mt-1 left-0 w-48 crm-surface bg-white rounded-xl shadow-xl border border-stone-100 py-1 z-50 max-h-48 overflow-y-auto">
                                         {channelPartnerSuggestions.map(name => (
                                             <button key={name}
                                                 onClick={() => {
@@ -1314,7 +1318,7 @@ export default function Dashboard({ user, onLogout, onOpenDevSwitcher }) {
                         )}
                         {(user?.userType === 'admin' || user?.userType === 'sales' || user?.userType === 'agent' || isChannelPartnerOffice) && (
                             <button onClick={() => setShowAddLead(true)}
-                                className="flex items-center gap-1.5 bg-stone-900 text-white px-3 py-2 rounded-xl text-sm font-medium hover:bg-stone-800 transition-colors">
+                                className="flex items-center gap-1.5 crm-primary-button bg-stone-900 text-white px-3 py-2 rounded-xl text-sm font-medium hover:bg-stone-800 transition-colors">
                                 <Plus className="w-4 h-4" />
                                 <span className="hidden sm:inline text-xs">Add Lead</span>
                             </button>
@@ -1340,10 +1344,9 @@ export default function Dashboard({ user, onLogout, onOpenDevSwitcher }) {
                     {currentView === 'leads' && (
                         <LeadsView 
                             currentUser={user} 
-                            onLeadConverted={(cust) => {
-                                setSelectedCustomer(cust);
-                                setCurrentView('stages');
-                                setSelectedStage(cust.stage || 'Upload Agreement (Pending)');
+                            onLeadConverted={() => {
+                                stageCacheRef.current.clear();
+                                fetchMetricsAndMeta(true);
                             }} 
                         />
                     )}
@@ -1368,6 +1371,7 @@ export default function Dashboard({ user, onLogout, onOpenDevSwitcher }) {
                     )} */}
 
                     {/* Stage grid - identical for every role */}
+                    {currentView === 'stages' && selectedStage === 'Registration' && <p className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">Registration temporarily includes customers with no saved status. These remain labelled “Status not recorded” until their status is entered.</p>}
                     {currentView === 'stages' && (
                         (loading && page === 0) ? (
                             <div className="flex items-center justify-center h-64">
@@ -1418,7 +1422,7 @@ export default function Dashboard({ user, onLogout, onOpenDevSwitcher }) {
                 />
                 </Suspense>
             )}
-            {showAddLead && <Suspense fallback={<ViewLoader />}><AddLeadModal isOpen={showAddLead} onClose={() => setShowAddLead(false)} onSave={handleAddLead} meta={meta} channel_partners={uniqueChannelPartners} user={user} /></Suspense>}
+            {showAddLead && <Suspense fallback={<ViewLoader />}><AddLeadModal isOpen={showAddLead} onClose={() => setShowAddLead(false)} onCustomerAdded={() => setCurrentView('leads')} /></Suspense>}
         </div>
     );
 }

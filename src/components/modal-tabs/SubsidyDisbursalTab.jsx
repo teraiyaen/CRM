@@ -1,3 +1,4 @@
+import { loanStatusOptions } from '../../utils/loanStatus';
 import React from "react";
 import { CheckCircle2, Banknote, Calendar, Edit3, X } from "lucide-react";
 import { EditableDetailItem } from "./shared";
@@ -70,7 +71,7 @@ export default function SubsidyDisbursalTab({
                         field="loan_status" 
                         value={editData.loan_status} 
                         onChange={handleChange} 
-                        options={["Inprocess", "Sanctioned", "1st Payment", "2nd Payment", "Total Received", "Reject"]}
+                        options={loanStatusOptions(editData.loan_status)}
                         isEditing={isEditing} 
                     />
                 </div>

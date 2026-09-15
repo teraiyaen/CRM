@@ -26,7 +26,8 @@ export default function TeraiyaBomPrintModal({
 
     if (!isOpen) return null;
 
-    const items = snapshotItems ? (customItems || []) : resolveTeraiyaBomItems(customItems);
+    const items = (snapshotItems ? (customItems || []) : resolveTeraiyaBomItems(customItems))
+        .filter(item => item.sr <= 34 || ['name', 'col1', 'col2', 'col3', 'unit', 'remark', 'detail'].some(key => String(item[key] ?? '').trim()));
     const custName = customer.consumer_name || customer.customer_name || '';
     const capacity = customer.proposed_capacity_kw || customer.system_capacity_kwp || '';
 

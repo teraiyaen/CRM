@@ -19,7 +19,7 @@ export default function GodownStockHistory({ refreshKey }) {
             .finally(() => { if (!cancelled) setLoading(false); });
         return () => { cancelled = true; };
     }, [page, refreshKey, revision]);
-    return <section className="space-y-3 rounded-xl border bg-white p-5">
+    return <section className="space-y-3 rounded-xl border crm-surface bg-white p-5">
         <div className="flex justify-between"><h3 className="font-bold">Stock history</h3><button disabled={loading} onClick={()=>setRevision(value=>value+1)}>Refresh</button></div>
         {loading ? <p>Loading stock history…</p> : error ? <p role="alert" className="text-red-700">{error}</p> : <>
             {rows.map(row => <div key={row.id} className="space-y-1 border-t py-3 text-sm">

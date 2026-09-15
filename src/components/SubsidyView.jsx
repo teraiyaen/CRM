@@ -172,7 +172,7 @@ export default function SubsidyView({ onSelectCustomer, isChannelPartnerOffice, 
                         placeholder="Search consumer name, mobile, consumer no..."
                         value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2.5 bg-white border border-stone-200 rounded-2xl text-xs font-semibold text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-300 shadow-2xs transition-all"
+                        className="w-full pl-10 pr-4 py-2.5 crm-surface bg-white border border-stone-200 rounded-2xl text-xs font-semibold text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-300 shadow-2xs transition-all"
                     />
                     {searchTerm && (
                         <button 
@@ -187,7 +187,7 @@ export default function SubsidyView({ onSelectCustomer, isChannelPartnerOffice, 
                 <div className="flex items-center gap-2 self-end sm:self-center">
                     <button
                         onClick={() => { fetchCounts(); fetchCustomers(0, false); }}
-                        className="p-2.5 bg-white hover:bg-stone-50 border border-stone-200 rounded-xl text-stone-600 transition-colors shadow-2xs cursor-pointer"
+                        className="p-2.5 crm-surface bg-white hover:bg-stone-50 border border-stone-200 rounded-xl text-stone-600 transition-colors shadow-2xs cursor-pointer"
                         title="Refresh counts"
                     >
                         <RefreshCw size={14} className={loading ? "animate-spin text-amber-500" : ""} />
@@ -205,7 +205,7 @@ export default function SubsidyView({ onSelectCustomer, isChannelPartnerOffice, 
                     className={`rounded-2xl p-3.5 border text-left transition-all cursor-pointer ${
                         activeFilter === null 
                             ? 'bg-stone-900 border-stone-900 text-white shadow-lg shadow-stone-900/10 scale-[1.02]' 
-                            : 'bg-white border-stone-200/80 text-stone-800 hover:border-stone-300'
+                            : 'crm-surface bg-white border-stone-200/80 text-stone-800 hover:border-stone-300'
                     }`}
                 >
                     <p className="text-[9px] font-bold uppercase tracking-widest mb-1 opacity-60">All Subsidies</p>
@@ -242,7 +242,7 @@ export default function SubsidyView({ onSelectCustomer, isChannelPartnerOffice, 
                     <p className="text-xs font-bold text-stone-600">Loading records from database...</p>
                 </div>
             ) : customers.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-64 bg-white rounded-3xl border border-dashed border-stone-200 p-8 text-stone-400 text-center">
+                <div className="flex flex-col items-center justify-center h-64 crm-surface bg-white rounded-3xl border border-dashed border-stone-200 p-8 text-stone-400 text-center">
                     <Tag className="w-10 h-10 mb-3 text-stone-300" />
                     <p className="font-bold text-stone-600 text-sm">No subsidy records found</p>
                     <p className="text-xs text-stone-400 mt-1 max-w-sm">
@@ -272,7 +272,7 @@ export default function SubsidyView({ onSelectCustomer, isChannelPartnerOffice, 
                                 <button
                                     key={c.id}
                                     onClick={() => onSelectCustomer(c)}
-                                    className="w-full bg-white rounded-2xl border border-stone-150 p-4 text-left hover:border-amber-400 hover:shadow-md transition-all group cursor-pointer"
+                                    className="w-full crm-surface bg-white rounded-2xl border border-stone-150 p-4 text-left hover:border-amber-400 hover:shadow-md transition-all group cursor-pointer"
                                 >
                                     <div className="flex justify-between items-start mb-2 gap-2">
                                         <div className="min-w-0">

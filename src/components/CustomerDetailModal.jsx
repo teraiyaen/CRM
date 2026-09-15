@@ -1,3 +1,5 @@
+import { customerStatusLabel } from '../utils/customerStatus';
+import { agreementDate } from '../utils/stampDetails';
 import { todayPaymentDate } from '../utils/customerPayments';
 import { AGREEMENT_COMPANY } from '../agreementCompany';
 // ─── CustomerDetailModal.jsx ──────────────────────────────────────────────────
@@ -13,7 +15,7 @@ import {
     Eye, Search, Image as ImageIcon, MessageSquare, Calendar, Wrench, Gauge, CheckCircle2, Printer
 } from "lucide-react";
 import { PRIMARY_STAGES, STAGE_IDS, ADMIN_COLUMNS, ADMIN_NUMERIC_COLUMNS } from "../constants";
-import { logActivity, formatDateToDDMMYYYY, formatINR, parseIndianNumber, sanitizePhoneNumber, sanitizeAdminUpdate } from "../utils";
+import { logActivity, formatINR, parseIndianNumber, sanitizePhoneNumber, sanitizeAdminUpdate } from "../utils";
 import { supabase } from "../supabase";
 import { AgreementPreview } from "./agreement/AgreementPreview";
 import CustomerModalTabsRouter from "./CustomerModalTabsRouter";
@@ -399,7 +401,7 @@ export default function CustomerDetailModal({ customer, onClose, onUpdate, onDel
 
     const handleGenerateAgreement = () => {
         setAgreementData({
-            executionDate: formatDateToDDMMYYYY(editData.submitted_on || new Date().toISOString()),
+            executionDate: agreementDate(todayPaymentDate()),
             consumerName: editData.consumer_name || editData.customer_name || "",
             consumerNo: editData.consumer_number || editData.consumer_no || "",
             village: editData.address || editData.villages || "",
@@ -450,7 +452,7 @@ export default function CustomerDetailModal({ customer, onClose, onUpdate, onDel
 
     return (
         <div className="fixed inset-0 bg-stone-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-[28px] shadow-2xl w-full max-w-5xl h-[94vh] overflow-hidden flex flex-col border border-stone-100">
+            <div className="crm-surface bg-white rounded-[28px] shadow-2xl w-full max-w-5xl h-[94vh] overflow-hidden flex flex-col border border-stone-100">
 
                 {/* Header */}
                 <div className="bg-stone-900 px-6 py-5 flex justify-between items-center flex-shrink-0">
@@ -511,37 +513,38 @@ export default function CustomerDetailModal({ customer, onClose, onUpdate, onDel
                 </div>
 
                 {/* Modal Body */}
-                <div className="flex-1 min-h-0 overflow-y-auto p-6 bg-[#FCFBFA]">
+                <div className="flex-1 min-h-0 overflow-y-auto p-6 bg-stone-50">
                     {/* Primary Stage Overview Banner */}
                     {activeTab !== "logs" && activeTab !== "history" && (
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                            <div className="p-4 rounded-2xl border border-stone-100 bg-white shadow-xs flex flex-col justify-between">
+                            <div className="p-4 rounded-2xl border border-stone-100 crm-surface bg-white shadow-xs flex flex-col justify-between">
                                 <div>
                                     <label className="text-[9px] text-stone-400 font-bold uppercase mb-1.5 block">Current Stage Status</label>
                                     <div className="text-xs text-stone-850 font-bold px-3 py-1.5 bg-stone-50 border border-stone-200/80 rounded-xl inline-flex items-center gap-1.5">
                                         <CheckCircle2 size={13} className="text-amber-500" />
-                                        {editData.portal_status || PRIMARY_STAGES.find(s => s.id === currentStageStatus)?.label || currentStageStatus}
+                                        {customerStatusLabel(editData)}
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="p-4 rounded-2xl border border-stone-100 bg-white shadow-xs flex flex-col justify-between">
+                            <div className="p-4 rounded-2xl border border-stone-100 crm-surface bg-white shadow-xs flex flex-col justify-between">
                                 <div>
                                     <label className="text-[9px] text-stone-400 font-bold uppercase mb-1.5 flex items-center justify-between">
-                                        <span>Stage Comment / Remarks</span>
+                                        <span>Customer Notes / Remarks</span>
                                         {isEditable && <span className="text-[9px] text-amber-600 font-semibold">Editable</span>}
                                     </label>
                                     {isEditable ? (
-                                        <input
-                                            type="text"
+                                        <textarea
+                                            rows={3}
+                                            aria-label="Customer notes and remarks"
                                             value={editData.remarks || ''}
                                             onChange={e => handleChange('remarks', e.target.value)}
-                                            placeholder="Type stage remarks / comment here..."
+                                            placeholder="Type customer notes / remarks here..."
                                             className="w-full text-xs font-semibold text-stone-800 bg-stone-50 border border-stone-200 rounded-xl px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-amber-400 placeholder:text-stone-400"
                                         />
                                     ) : (
-                                        <p className="text-xs text-stone-600 font-medium truncate">
+                                        <p className="text-xs text-stone-600 font-medium whitespace-pre-wrap break-words">
                                             {editData.remarks || "No remarks recorded for this application."}
                                         </p>
                                     )}
@@ -556,13 +559,13 @@ export default function CustomerDetailModal({ customer, onClose, onUpdate, onDel
 
                 {/* Footer Bar */}
                 {isEditable && (
-                    <div className="p-4 border-t border-stone-100 bg-white flex-shrink-0 flex gap-3">
+                    <div className="p-4 border-t border-stone-100 crm-surface bg-white flex-shrink-0 flex gap-3">
                         <button
                             onClick={() => handleSave()}
                             disabled={saving}
                             className={`flex-1 py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-all text-xs cursor-pointer shadow-sm disabled:opacity-50 ${
                                 isFormDirty
-                                    ? "bg-stone-900 text-white hover:bg-stone-800"
+                                    ? "crm-primary-button bg-stone-900 text-white hover:bg-stone-800"
                                     : "bg-emerald-600 hover:bg-emerald-700 text-white"
                             }`}
                         >
@@ -597,7 +600,7 @@ export default function CustomerDetailModal({ customer, onClose, onUpdate, onDel
             {/* Validation Issues Modal */}
             {showValidationModal && (
                 <div className="fixed inset-0 z-[80] flex items-center justify-center bg-stone-950/60 p-4 backdrop-blur-sm" onClick={() => setShowValidationModal(false)}>
-                    <section className="w-full max-w-md overflow-hidden rounded-[28px] border border-amber-200 bg-white shadow-2xl animate-in zoom-in-95 fade-in duration-200" onClick={e => e.stopPropagation()}>
+                    <section className="w-full max-w-md overflow-hidden rounded-[28px] border border-amber-200 crm-surface bg-white shadow-2xl animate-in zoom-in-95 fade-in duration-200" onClick={e => e.stopPropagation()}>
                         <div className="bg-gradient-to-br from-amber-500 via-amber-500 to-orange-500 px-6 py-5 text-white">
                             <div className="flex items-start justify-between gap-4">
                                 <div className="flex items-center gap-3">

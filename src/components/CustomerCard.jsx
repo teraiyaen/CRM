@@ -1,3 +1,4 @@
+import { customerStatusLabel } from '../utils/customerStatus';
 import React, { useState, useEffect, useRef, memo } from 'react';
 import { Zap, MapPin, User, Building2, Package, FolderOpen, ShieldCheck, Phone, Edit3, Truck, Calendar, Tag, CheckCircle2 } from 'lucide-react';
 import { PRIMARY_STAGES } from '../constants';
@@ -22,7 +23,7 @@ const CustomerCard = memo(function CustomerCard({ customer, onSelect, onMoveStag
     const capacity = customer.proposed_capacity_kw || customer.system_capacity_kwp || '0';
     const panel = customer.panel_brand || customer.module_brand || 'Not Assigned';
     const inverter = customer.inverter_brand || customer.inverter_make || '';
-    const currentStatus = customer.portal_status || customer.status || customer.stage || 'Registration';
+    const currentStatus = customerStatusLabel(customer);
     const address = customer.address || customer.sub_division || customer.circle || customer.district_name || '';
     const dealer = customer.dealer || customer.channel_partner || 'Teraiya';
     const refAgent = customer.ref_agent || '';

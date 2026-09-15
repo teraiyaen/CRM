@@ -911,8 +911,8 @@ export default function AgentPortal({ user, onLogout, onOpenDevSwitcher }) {
     return (
         <>
             {view === 'menu' && (
-                <div className="min-h-screen bg-[#FCFBFA] text-stone-850 font-sans flex flex-col pb-8">
-                    <header className="bg-white border-b border-stone-100 px-4 py-3 sticky top-0 z-30 flex items-center justify-between shadow-sm">
+                <div className="min-h-screen bg-stone-50 text-stone-850 font-sans flex flex-col pb-8">
+                    <header className="crm-surface bg-white border-b border-stone-100 px-4 py-3 sticky top-0 z-30 flex items-center justify-between shadow-sm">
                 <BrandMark label={isAgent2 ? 'Dealer Portal' : 'Channel Partner Portal'} />
                 <div className="flex items-center gap-3">
                     <span className="text-xs font-bold text-stone-600 truncate max-w-[120px]">{user.name}</span>
@@ -927,7 +927,7 @@ export default function AgentPortal({ user, onLogout, onOpenDevSwitcher }) {
             </header>
                     {/* Menu View (Clean Action Cards) */}
             
-                <main className="flex-1 w-full max-w-md mx-auto p-4 space-y-4 animate-in fade-in duration-300">
+                <main className="crm-workspace crm-home flex-1 w-full max-w-md mx-auto p-4 space-y-4 animate-in fade-in duration-300">
                     <section className="relative overflow-hidden rounded-[28px] bg-stone-950 px-5 py-6 text-white shadow-xl shadow-stone-900/10">
                         <div className="absolute -right-10 -top-12 h-52 w-52 rounded-full bg-amber-400/20 blur-2xl" />
                         <div className="absolute -bottom-16 right-24 h-40 w-40 rounded-full border-[18px] border-amber-400/10" />
@@ -961,7 +961,7 @@ export default function AgentPortal({ user, onLogout, onOpenDevSwitcher }) {
                             { label: 'Discom Subs', value: getCustomersByStage(STAGE_IDS.DISCOM_SUBMISSION).length, icon: Send, tone: 'bg-blue-50 text-blue-700' },
                             { label: 'Meter Installs', value: getCustomersByStage(STAGE_IDS.METER_INSTALLATION).length, icon: Zap, tone: 'bg-emerald-50 text-emerald-700' },
                         ].map(({ label, value, icon: Icon, tone }) => (
-                            <div key={label} className="rounded-2xl border border-stone-200/80 bg-white p-4 shadow-sm">
+                            <div key={label} className="rounded-2xl border border-stone-200/80 crm-surface bg-white p-4 shadow-sm">
                                 <div className={`flex h-8 w-8 items-center justify-center rounded-xl ${tone}`}><Icon size={15} /></div>
                                 <p className="mt-3 text-2xl font-black tracking-tight text-stone-900">{value}</p>
                                 <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wide text-stone-400">{label}</p>
@@ -975,7 +975,7 @@ export default function AgentPortal({ user, onLogout, onOpenDevSwitcher }) {
                                 <div className="flex items-center gap-3"><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/20"><Plus size={18} /></span><span><span className="block text-xs font-black">Add customer</span><span className="mt-0.5 block text-[10px] font-medium text-amber-100">Create a new lead</span></span></div>
                                 <ChevronRight size={16} className="transition-transform group-hover:translate-x-0.5" />
                             </button>
-                            <button onClick={() => { setActiveWorkdeskTab(STAGE_IDS.LEADS); setView('workdesk'); }} className="group flex items-center justify-between rounded-2xl border border-stone-200 bg-white p-4 text-left shadow-sm transition hover:border-stone-300 hover:shadow-md active:scale-[0.99] cursor-pointer">
+                            <button onClick={() => { setActiveWorkdeskTab(STAGE_IDS.LEADS); setView('workdesk'); }} className="group flex items-center justify-between rounded-2xl border border-stone-200 crm-surface bg-white p-4 text-left shadow-sm transition hover:border-stone-300 hover:shadow-md active:scale-[0.99] cursor-pointer">
                                 <div className="flex items-center gap-3"><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-stone-100 text-stone-700"><Search size={17} /></span><span><span className="block text-xs font-black text-stone-900">Customer directory</span><span className="mt-0.5 block text-[10px] font-medium text-stone-400">Search and track all leads</span></span></div>
                                 <ChevronRight size={16} className="text-stone-400 transition-transform group-hover:translate-x-0.5" />
                             </button>
@@ -987,7 +987,7 @@ export default function AgentPortal({ user, onLogout, onOpenDevSwitcher }) {
             )}
             
             {view === 'workdesk' && (
-                <div className="flex h-screen bg-stone-100 justify-center text-stone-850 font-sans overflow-hidden"><div className="w-full max-w-md bg-[#FCFBFA] h-full shadow-2xl relative flex flex-col">
+                <div className="flex h-screen bg-stone-100 justify-center text-stone-850 font-sans overflow-hidden"><div className="w-full max-w-md bg-stone-50 h-full shadow-2xl relative flex flex-col">
             
             {/* MOBILE DRAWER */}
             {isSidebarOpen && (
@@ -1051,11 +1051,11 @@ export default function AgentPortal({ user, onLogout, onOpenDevSwitcher }) {
 
 
             {/* MAIN CONTENT */}
-            <main className="flex-1 flex flex-col h-screen overflow-hidden bg-stone-50/50 relative">
+            <main className="crm-workspace flex-1 flex flex-col h-screen overflow-hidden bg-stone-50/50 relative">
                 {/* HEADER */}
-                <header className="bg-white border-b border-stone-200 px-4 md:px-6 py-3 md:py-4 shrink-0 flex items-center justify-between shadow-sm z-10">
+                <header className="crm-surface bg-white border-b border-stone-200 px-4 md:px-6 py-3 md:py-4 shrink-0 flex items-center justify-between shadow-sm z-10">
                     <div className="flex items-center gap-3">
-                        <button onClick={() => setIsSidebarOpen(true)} className="flex items-center gap-1.5 px-3 py-1.5 bg-stone-900 text-white rounded-lg text-[10px] uppercase tracking-wide font-black shadow-sm active:scale-95 transition-transform">
+                        <button onClick={() => setIsSidebarOpen(true)} className="flex items-center gap-1.5 px-3 py-1.5 crm-primary-button bg-stone-900 text-white rounded-lg text-[10px] uppercase tracking-wide font-black shadow-sm active:scale-95 transition-transform">
                             <Layers size={14} /> Stages
                         </button>
                         <div>
@@ -1108,7 +1108,7 @@ export default function AgentPortal({ user, onLogout, onOpenDevSwitcher }) {
 
                 
                 {/* MOBILE SEARCH BAR */}
-                <div className="sm:hidden px-4 py-3 bg-white border-b border-stone-150 shrink-0 shadow-sm z-10">
+                <div className="sm:hidden px-4 py-3 crm-surface bg-white border-b border-stone-150 shrink-0 shadow-sm z-10">
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 w-4 h-4" />
                         <input
@@ -1133,7 +1133,7 @@ export default function AgentPortal({ user, onLogout, onOpenDevSwitcher }) {
                             <Loader2 className="w-8 h-8 text-amber-500 animate-spin" />
                         </div>
                     ) : getWorkdeskCustomers(activeWorkdeskTab).length === 0 ? (
-                        <div className="flex flex-col items-center justify-center text-center text-stone-400 bg-white border border-dashed border-stone-200 rounded-3xl p-6 md:p-8 mt-4 max-w-sm md:max-w-lg mx-auto">
+                        <div className="flex flex-col items-center justify-center text-center text-stone-400 crm-surface bg-white border border-dashed border-stone-200 rounded-3xl p-6 md:p-8 mt-4 max-w-sm md:max-w-lg mx-auto">
                             <div className="w-12 h-12 md:w-16 md:h-16 bg-stone-50 rounded-2xl flex items-center justify-center mb-3 md:mb-4">
                                 <Users className="w-6 h-6 md:w-8 md:h-8 text-stone-300" />
                             </div>
@@ -1148,7 +1148,7 @@ export default function AgentPortal({ user, onLogout, onOpenDevSwitcher }) {
                                 <div
                                     key={cust.id}
                                     onClick={() => handleSelectCustomerForStage(cust, activeWorkdeskTab)}
-                                    className="bg-white p-4 md:p-5 rounded-2xl border border-stone-200/80 shadow-sm hover:border-blue-400 hover:shadow-md transition-all cursor-pointer group active:scale-[0.99] flex flex-col justify-between"
+                                    className="crm-surface bg-white p-4 md:p-5 rounded-2xl border border-stone-200/80 shadow-sm hover:border-blue-400 hover:shadow-md transition-all cursor-pointer group active:scale-[0.99] flex flex-col justify-between"
                                 >
                                     <div>
                                         <div className="flex justify-between items-start gap-2 mb-3">
@@ -1232,7 +1232,7 @@ export default function AgentPortal({ user, onLogout, onOpenDevSwitcher }) {
             {/* Customer Details & Dealer Actions Modal */}
             {selectedCust && (
                 <div className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
-                    <div className="w-full sm:max-w-lg bg-white rounded-t-[28px] sm:rounded-[28px] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col animate-in slide-in-from-bottom-5 duration-300">
+                    <div className="w-full sm:max-w-lg crm-surface bg-white rounded-t-[28px] sm:rounded-[28px] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col animate-in slide-in-from-bottom-5 duration-300">
                         {/* Detail Header - Name, Phone Number & Consumer No on Top */}
                         <div className="shrink-0 px-5 py-5 border-b border-stone-150 bg-stone-50/90 flex justify-between items-start">
                             <div className="space-y-1">
@@ -1280,7 +1280,7 @@ export default function AgentPortal({ user, onLogout, onOpenDevSwitcher }) {
                         </div>
 
                         {/* Swipeable stage tabs for this customer */}
-                        <div className="customer-stage-tabs shrink-0 border-b border-stone-150 bg-white px-4 py-3.5 overflow-x-auto">
+                        <div className="customer-stage-tabs shrink-0 border-b border-stone-150 crm-surface bg-white px-4 py-3.5 overflow-x-auto">
                             <div className="flex min-w-max gap-2">
                                 {customerStageNavigation.filter(stage => {
                                     const pType = (selectedCust?.payment_type || '').trim().toLowerCase();
@@ -1409,7 +1409,7 @@ export default function AgentPortal({ user, onLogout, onOpenDevSwitcher }) {
                                     ) : (
                                         <div className="grid gap-2">
                                             {custDocs.map(doc => (
-                                                <div key={doc.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-white border border-stone-200 rounded-xl shadow-sm">
+                                                <div key={doc.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 crm-surface bg-white border border-stone-200 rounded-xl shadow-sm">
                                                     <div className="flex items-center gap-3">
                                                         <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center shrink-0">
                                                             <FileText size={14} />
@@ -1511,7 +1511,7 @@ export default function AgentPortal({ user, onLogout, onOpenDevSwitcher }) {
 
                                     {/* Track Leads is intentionally limited to the saved lead form data. */}
                                     {(
-                                    <div className="bg-white p-4 rounded-2xl border border-stone-150 shadow-2xs space-y-3">
+                                    <div className="crm-surface bg-white p-4 rounded-2xl border border-stone-150 shadow-2xs space-y-3">
                                         <h5 className="text-[9px] font-black text-stone-400 uppercase tracking-widest border-b border-stone-150 pb-2 mb-1 flex items-center gap-1.5">
                                             <Paperclip size={11} className="text-amber-500" /> Attached Documents & Uploads
                                         </h5>
@@ -1658,7 +1658,7 @@ export default function AgentPortal({ user, onLogout, onOpenDevSwitcher }) {
                                     </div>
 
                                     {/* Registration documents are view/download only for agents. */}
-                                    <div className="bg-white p-4 rounded-2xl border border-stone-150 shadow-2xs space-y-3">
+                                    <div className="crm-surface bg-white p-4 rounded-2xl border border-stone-150 shadow-2xs space-y-3">
                                         <h5 className="text-[9px] font-black text-stone-400 uppercase tracking-widest border-b border-stone-150 pb-2 mb-1 flex items-center gap-1.5">
                                             <Paperclip size={11} className="text-amber-500" /> Registration Documents
                                         </h5>
@@ -1880,7 +1880,7 @@ export default function AgentPortal({ user, onLogout, onOpenDevSwitcher }) {
                                                 <select
                                                     value={editData.roof_shed || selectedCust.roof_shed || ''}
                                                     onChange={e => setEditData(prev => ({ ...prev, roof_shed: e.target.value }))}
-                                                    className="bg-white border border-stone-200 rounded-lg px-2.5 py-1 text-xs font-semibold text-stone-800 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                                                    className="crm-surface bg-white border border-stone-200 rounded-lg px-2.5 py-1 text-xs font-semibold text-stone-800 focus:outline-none focus:ring-1 focus:ring-amber-500"
                                                 >
                                                     <option value="">Select Roof / Shed</option>
                                                     <option value="Roof">Roof</option>
@@ -1895,7 +1895,7 @@ export default function AgentPortal({ user, onLogout, onOpenDevSwitcher }) {
                                                     value={editData.dc_cable ?? selectedCust.dc_cable ?? ''}
                                                     onChange={e => setEditData(prev => ({ ...prev, dc_cable: e.target.value }))}
                                                     placeholder="Meters"
-                                                    className="w-28 bg-white border border-stone-200 rounded-lg px-2.5 py-1 text-xs font-semibold text-stone-800 text-right focus:outline-none focus:ring-1 focus:ring-amber-500"
+                                                    className="w-28 crm-surface bg-white border border-stone-200 rounded-lg px-2.5 py-1 text-xs font-semibold text-stone-800 text-right focus:outline-none focus:ring-1 focus:ring-amber-500"
                                                 />
                                             </div>
                                             <div className="flex items-center justify-between py-2">
@@ -1906,7 +1906,7 @@ export default function AgentPortal({ user, onLogout, onOpenDevSwitcher }) {
                                                     value={editData.ac_cable ?? selectedCust.ac_cable ?? ''}
                                                     onChange={e => setEditData(prev => ({ ...prev, ac_cable: e.target.value }))}
                                                     placeholder="Meters"
-                                                    className="w-28 bg-white border border-stone-200 rounded-lg px-2.5 py-1 text-xs font-semibold text-stone-800 text-right focus:outline-none focus:ring-1 focus:ring-amber-500"
+                                                    className="w-28 crm-surface bg-white border border-stone-200 rounded-lg px-2.5 py-1 text-xs font-semibold text-stone-800 text-right focus:outline-none focus:ring-1 focus:ring-amber-500"
                                                 />
                                             </div>
                                             <div className="flex items-center justify-between py-2">
@@ -1917,7 +1917,7 @@ export default function AgentPortal({ user, onLogout, onOpenDevSwitcher }) {
                                                     value={editData.structure_front_leg_height ?? selectedCust.structure_front_leg_height ?? ''}
                                                     onChange={e => setEditData(prev => ({ ...prev, structure_front_leg_height: e.target.value }))}
                                                     placeholder="ft"
-                                                    className="w-28 bg-white border border-stone-200 rounded-lg px-2.5 py-1 text-xs font-semibold text-stone-800 text-right focus:outline-none focus:ring-1 focus:ring-amber-500"
+                                                    className="w-28 crm-surface bg-white border border-stone-200 rounded-lg px-2.5 py-1 text-xs font-semibold text-stone-800 text-right focus:outline-none focus:ring-1 focus:ring-amber-500"
                                                 />
                                             </div>
                                             <div className="flex items-center justify-between py-2">
@@ -1928,7 +1928,7 @@ export default function AgentPortal({ user, onLogout, onOpenDevSwitcher }) {
                                                     value={editData.structure_rear_leg_height ?? selectedCust.structure_rear_leg_height ?? ''}
                                                     onChange={e => setEditData(prev => ({ ...prev, structure_rear_leg_height: e.target.value }))}
                                                     placeholder="ft"
-                                                    className="w-28 bg-white border border-stone-200 rounded-lg px-2.5 py-1 text-xs font-semibold text-stone-800 text-right focus:outline-none focus:ring-1 focus:ring-amber-500"
+                                                    className="w-28 crm-surface bg-white border border-stone-200 rounded-lg px-2.5 py-1 text-xs font-semibold text-stone-800 text-right focus:outline-none focus:ring-1 focus:ring-amber-500"
                                                 />
                                             </div>
                                             <div className="flex items-center justify-between py-2">
@@ -1939,7 +1939,7 @@ export default function AgentPortal({ user, onLogout, onOpenDevSwitcher }) {
                                                     value={formatInputValue(editData.invoice_value ?? selectedCust.invoice_value ?? '')}
                                                     onChange={e => setEditData(prev => ({ ...prev, invoice_value: formatInputValue(e.target.value) }))}
                                                     placeholder="₹ Amount"
-                                                    className="w-32 bg-white border border-stone-200 rounded-lg px-2.5 py-1 text-xs font-semibold text-stone-800 text-right focus:outline-none focus:ring-1 focus:ring-amber-500"
+                                                    className="w-32 crm-surface bg-white border border-stone-200 rounded-lg px-2.5 py-1 text-xs font-semibold text-stone-800 text-right focus:outline-none focus:ring-1 focus:ring-amber-500"
                                                 />
                                             </div>
 
@@ -1950,7 +1950,7 @@ export default function AgentPortal({ user, onLogout, onOpenDevSwitcher }) {
                                                     value={editData.material_order_notes ?? selectedCust.material_order_notes ?? ''}
                                                     onChange={e => setEditData(prev => ({ ...prev, material_order_notes: e.target.value }))}
                                                     placeholder="Optional notes"
-                                                    className="w-48 bg-white border border-stone-200 rounded-lg px-2.5 py-1 text-xs font-semibold text-stone-800 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                                                    className="w-48 crm-surface bg-white border border-stone-200 rounded-lg px-2.5 py-1 text-xs font-semibold text-stone-800 focus:outline-none focus:ring-1 focus:ring-amber-500"
                                                 />
                                             </div>
                                         </div>
@@ -1986,7 +1986,7 @@ export default function AgentPortal({ user, onLogout, onOpenDevSwitcher }) {
                             {displayedStage === STAGE_IDS.MATERIAL_INTEGRATION && (
                                 <div className="space-y-4">
                                     {/* Print action sits at the top of the stage. */}
-                                    <div className="flex items-center justify-between gap-2 bg-white p-3 rounded-2xl border border-stone-200 shadow-sm">
+                                    <div className="flex items-center justify-between gap-2 crm-surface bg-white p-3 rounded-2xl border border-stone-200 shadow-sm">
                                         <span className="bg-amber-50 text-amber-800 border border-amber-200 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider">
                                             {integrationBomType} BOM
                                         </span>
@@ -2017,7 +2017,7 @@ export default function AgentPortal({ user, onLogout, onOpenDevSwitcher }) {
                                         {miPanelSerials.length > 0 ? (
                                             <div className="grid grid-cols-2 gap-1.5 pt-1">
                                                 {miPanelSerials.map((serial, idx) => (
-                                                    <div key={idx} className="border border-stone-200 bg-white px-1.5 py-1 rounded-lg flex items-center gap-1.5 min-w-0">
+                                                    <div key={idx} className="border border-stone-200 crm-surface bg-white px-1.5 py-1 rounded-lg flex items-center gap-1.5 min-w-0">
                                                         <span className="text-[9px] font-bold text-stone-400 w-4 text-center flex-shrink-0">{idx + 1}.</span>
                                                         <span className="font-mono text-[10px] font-bold text-stone-900 truncate">{serial}</span>
                                                     </div>
@@ -2113,7 +2113,7 @@ export default function AgentPortal({ user, onLogout, onOpenDevSwitcher }) {
                                         {selectedCust.panel_serial_no && (
                                             <div className="py-2">
                                                 <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wide block mb-1">Panel Serial Numbers</span>
-                                                <p className="font-semibold text-stone-900 whitespace-pre-line text-[11px] bg-white p-2 rounded-xl border border-stone-200">{selectedCust.panel_serial_no}</p>
+                                                <p className="font-semibold text-stone-900 whitespace-pre-line text-[11px] crm-surface bg-white p-2 rounded-xl border border-stone-200">{selectedCust.panel_serial_no}</p>
                                             </div>
                                         )}
                                     </div>
@@ -2236,7 +2236,7 @@ export default function AgentPortal({ user, onLogout, onOpenDevSwitcher }) {
                                                         className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider border cursor-pointer transition-all ${
                                                             (editData.meter_installation || selectedCust.meter_installation) === val
                                                                 ? (val === 'Yes' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-rose-600 text-white border-rose-600')
-                                                                : 'bg-white text-stone-600 border-stone-200 hover:bg-stone-50'
+                                                                : 'crm-surface bg-white text-stone-600 border-stone-200 hover:bg-stone-50'
                                                         }`}
                                                     >
                                                         {val}
@@ -2250,7 +2250,7 @@ export default function AgentPortal({ user, onLogout, onOpenDevSwitcher }) {
                                                 type="date"
                                                 value={editData.installation_date ?? selectedCust.installation_date ?? ''}
                                                 onChange={e => setEditData(prev => ({ ...prev, installation_date: e.target.value }))}
-                                                className="bg-white border border-stone-200 rounded-lg px-2.5 py-1 text-xs font-semibold text-stone-800 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                                                className="crm-surface bg-white border border-stone-200 rounded-lg px-2.5 py-1 text-xs font-semibold text-stone-800 focus:outline-none focus:ring-1 focus:ring-amber-500"
                                             />
                                         </div>
                                     </div>
@@ -2310,7 +2310,7 @@ export default function AgentPortal({ user, onLogout, onOpenDevSwitcher }) {
                                                         className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider border cursor-pointer transition-all ${
                                                             (editData.discom_inspection || selectedCust.discom_inspection) === val
                                                                 ? (val === 'Yes' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-rose-600 text-white border-rose-600')
-                                                                : 'bg-white text-stone-600 border-stone-200 hover:bg-stone-50'
+                                                                : 'crm-surface bg-white text-stone-600 border-stone-200 hover:bg-stone-50'
                                                         }`}
                                                     >
                                                         {val}
@@ -2601,7 +2601,7 @@ export default function AgentPortal({ user, onLogout, onOpenDevSwitcher }) {
             {/* Soft-Validation / Requirements popup */}
             {showValidationModal && (
                 <div className="fixed inset-0 z-[80] flex items-center justify-center bg-stone-950/60 p-4 backdrop-blur-sm" onClick={() => setShowValidationModal(false)}>
-                    <section className="w-full max-w-md overflow-hidden rounded-[28px] border border-amber-200 bg-white shadow-2xl animate-in zoom-in-95 fade-in duration-200" onClick={event => event.stopPropagation()} role="alertdialog" aria-modal="true" aria-labelledby="requirements-title">
+                    <section className="w-full max-w-md overflow-hidden rounded-[28px] border border-amber-200 crm-surface bg-white shadow-2xl animate-in zoom-in-95 fade-in duration-200" onClick={event => event.stopPropagation()} role="alertdialog" aria-modal="true" aria-labelledby="requirements-title">
                         <div className="bg-gradient-to-br from-amber-500 via-amber-500 to-orange-500 px-6 py-5 text-white">
                             <div className="flex items-start justify-between gap-4">
                                 <div className="flex items-center gap-3">

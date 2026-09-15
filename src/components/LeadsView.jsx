@@ -1,20 +1,26 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import ReferringAgentSelect from './ReferringAgentSelect';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Users, Plus, Search, Filter, RefreshCw, CheckCircle2, XCircle, Clock, ArrowRight, Phone, Mail, MapPin, Zap, UserPlus } from 'lucide-react';
 import { supabase } from '../supabase';
+import useOperationNames from '../hooks/useOperationNames';
+import { operationNames } from '../utils/operationNames';
 
 export default function LeadsView({ currentUser, onLeadConverted }) {
     const [leads, setLeads] = useState([]);
+    const [error, setError] = useState('');
+    const [busy, setBusy] = useState(false);
+    const actionLock = useRef(false);
     const [loading, setLoading] = useState(false);
     const [activeFilter, setActiveFilter] = useState('ALL'); // 'ALL' | 'NEW' | 'CONVERTED' | 'LOST'
     const [searchTerm, setSearchTerm] = useState('');
     const [showAddModal, setShowAddModal] = useState(false);
+    const dealerChoices = useOperationNames(showAddModal);
     const [selectedLeadForLost, setSelectedLeadForLost] = useState(null);
     const [lostReason, setLostReason] = useState('');
 
     // Add Lead Form State
     const [form, setForm] = useState({
         consumer_name: '',
-        consumer_number: '',
         mobile_no: '',
         email: '',
         address: '',
@@ -23,34 +29,24 @@ export default function LeadsView({ currentUser, onLeadConverted }) {
         circle: '',
         discom_name: 'Paschim Gujarat Vij Co. Limited',
         proposed_capacity_kw: '3.24',
-        dealer: 'Teraiya',
+        dealer: '',
         ref_agent: '',
         remarks: ''
     });
 
     const fetchLeads = useCallback(async () => {
-        setLoading(true);
+        setLoading(true); setError('');
         try {
-            const { data, error } = await supabase
-                .from('leads')
-                .select('*')
-                .order('created_at', { ascending: false });
-
-            if (!error && data) {
-                setLeads(data);
-                localStorage.setItem('teraiya_leads_cache', JSON.stringify(data));
-            } else {
-                // Fallback to cached or demo leads if table not yet migrated
-                const cached = localStorage.getItem('teraiya_leads_cache');
-                if (cached) setLeads(JSON.parse(cached));
+            const rows = [];
+            for (let start = 0; ; start += 500) {
+                const { data, error } = await supabase.from('leads').select('*').order('created_at', {ascending:false}).order('id').range(start,start+499);
+                if (error) throw error;
+                rows.push(...(data || []));
+                if (!data || data.length < 500) break;
             }
-        } catch (e) {
-            console.warn('Leads fetch error, using local state:', e);
-            const cached = localStorage.getItem('teraiya_leads_cache');
-            if (cached) setLeads(JSON.parse(cached));
-        } finally {
-            setLoading(false);
-        }
+            setLeads(rows);
+        } catch (err) { setError(err.message); }
+        finally { setLoading(false); }
     }, []);
 
     useEffect(() => {
@@ -59,12 +55,11 @@ export default function LeadsView({ currentUser, onLeadConverted }) {
 
     const handleAddLead = async (e) => {
         e.preventDefault();
-        if (!form.consumer_name.trim()) return;
+        if (!form.consumer_name.trim() || actionLock.current) return;
+        actionLock.current = true; setBusy(true); setError('');
 
         const newLead = {
-            id: `lead-${Date.now()}`,
             consumer_name: form.consumer_name.trim(),
-            consumer_number: form.consumer_number.trim() || null,
             mobile_no: form.mobile_no.trim() || null,
             email: form.email.trim() || null,
             address: form.address.trim() || null,
@@ -73,7 +68,7 @@ export default function LeadsView({ currentUser, onLeadConverted }) {
             circle: form.circle.trim() || null,
             discom_name: form.discom_name || 'Paschim Gujarat Vij Co. Limited',
             proposed_capacity_kw: parseFloat(form.proposed_capacity_kw) || 3.24,
-            dealer: form.dealer || 'Teraiya',
+            dealer: form.dealer || null,
             ref_agent: form.ref_agent || null,
             status: 'New',
             remarks: form.remarks || null,
@@ -81,24 +76,18 @@ export default function LeadsView({ currentUser, onLeadConverted }) {
             updated_at: new Date().toISOString()
         };
 
-        const updated = [newLead, ...leads];
-        setLeads(updated);
-        localStorage.setItem('teraiya_leads_cache', JSON.stringify(updated));
-
         try {
             const { data, error } = await supabase.from('leads').insert([newLead]).select().single();
-            if (!error && data) {
-                setLeads(prev => prev.map(l => l.id === newLead.id ? data : l));
-            }
-        } catch (err) {
-            console.warn('Could not insert to leads table:', err);
-        }
+            if (error) throw error;
+            if (!data) throw new Error('Lead was not saved.');
+            setLeads(previous => [data, ...previous]);
+        } catch (err) { setError(err.message); return; }
+        finally { actionLock.current = false; setBusy(false); }
 
         setShowAddModal(false);
         setForm({
             consumer_name: '',
-            consumer_number: '',
-            mobile_no: '',
+                mobile_no: '',
             email: '',
             address: '',
             sub_division: '',
@@ -106,78 +95,37 @@ export default function LeadsView({ currentUser, onLeadConverted }) {
             circle: '',
             discom_name: 'Paschim Gujarat Vij Co. Limited',
             proposed_capacity_kw: '3.24',
-            dealer: 'Teraiya',
+            dealer: '',
             ref_agent: '',
             remarks: ''
         });
     };
 
     const handleConvertLead = async (lead) => {
-        const now = new Date().toISOString();
-        const updated = leads.map(l => l.id === lead.id ? { ...l, status: 'Converted', converted_at: now } : l);
-        setLeads(updated);
-        localStorage.setItem('teraiya_leads_cache', JSON.stringify(updated));
-
-        // 1. Update lead record in leads table
+        if (actionLock.current) return;
+        actionLock.current = true; setBusy(true); setError('');
         try {
-            await supabase.from('leads').update({ status: 'Converted', converted_at: now }).eq('id', lead.id);
-        } catch (e) {
-            console.warn(e);
-        }
-
-        // 2. Also insert into admin table so it enters the active project stages
-        try {
-            const customerData = {
-                consumer_name: lead.consumer_name,
-                consumer_number: lead.consumer_number || `CRN-${Date.now().toString().slice(-6)}`,
-                mobile_no: lead.mobile_no,
-                email: lead.email,
-                address: lead.address,
-                sub_division: lead.sub_division,
-                division: lead.division,
-                circle: lead.circle,
-                discom_name: lead.discom_name,
-                proposed_capacity_kw: lead.proposed_capacity_kw,
-                dealer: lead.dealer,
-                ref_agent: lead.ref_agent,
-                status: 'Upload Agreement (Pending)',
-                portal_status: 'Upload Agreement (Pending)',
-                stage: 'Upload Agreement (Pending)',
-                sources: 'LEAD_CONVERSION',
-                remarks: `Converted from lead (${lead.remarks || 'No notes'})`
-            };
-            const { data: createdCust } = await supabase.from('admin').insert([customerData]).select().single();
-            if (createdCust && onLeadConverted) {
-                onLeadConverted(createdCust);
-            }
-        } catch (err) {
-            console.warn('Conversion to admin table failed:', err);
-        }
+            const { data, error } = await supabase.rpc('crm_convert_lead', { p_lead_id: lead.id });
+            if (error) throw error;
+            if (!data?.lead?.id || !data?.customer?.id) throw new Error('Conversion was not confirmed.');
+            setLeads(previous => previous.map(row => row.id === lead.id ? data.lead : row));
+            setActiveFilter('CONVERTED');
+            onLeadConverted?.(data.customer);
+        } catch (err) { setError(`Lead conversion failed: ${err.message}`); }
+        finally { actionLock.current = false; setBusy(false); }
     };
 
     const handleMarkLost = async () => {
-        if (!selectedLeadForLost) return;
-        const now = new Date().toISOString();
-        const updated = leads.map(l => l.id === selectedLeadForLost.id ? {
-            ...l,
-            status: 'Lost',
-            lost_reason: lostReason || 'Client not interested'
-        } : l);
-        setLeads(updated);
-        localStorage.setItem('teraiya_leads_cache', JSON.stringify(updated));
-
+        if (!selectedLeadForLost || actionLock.current) return;
+        actionLock.current = true; setBusy(true); setError('');
         try {
-            await supabase.from('leads').update({
-                status: 'Lost',
-                lost_reason: lostReason || 'Client not interested',
-                updated_at: now
-            }).eq('id', selectedLeadForLost.id);
-        } catch (e) {
-            console.warn(e);
-        }
-
-        setSelectedLeadForLost(null);
-        setLostReason('');
+            const {data,error} = await supabase.from('leads').update({status:'Lost', lost_reason:lostReason || 'Client not interested',updated_at:new Date().toISOString()}).eq('id',selectedLeadForLost.id).select().single();
+            if (error) throw error;
+            if (!data) throw new Error('Lead status was not saved.');
+            setLeads(previous => previous.map(row => row.id === data.id ? data : row));
+            setSelectedLeadForLost(null); setLostReason('');
+        } catch (err) { setError(err.message); }
+        finally { actionLock.current = false; setBusy(false); }
     };
 
     // Filter calculations
@@ -205,6 +153,7 @@ export default function LeadsView({ currentUser, onLeadConverted }) {
 
     return (
         <div className="space-y-6 animate-in fade-in duration-300">
+            {error && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">{error}</p>}
             {/* Top Stat Cards */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <button
@@ -212,7 +161,7 @@ export default function LeadsView({ currentUser, onLeadConverted }) {
                     className={`rounded-2xl p-4 border text-left transition-all cursor-pointer ${
                         activeFilter === 'ALL'
                             ? 'bg-stone-900 border-stone-900 text-white shadow-md'
-                            : 'bg-white border-stone-200/80 text-stone-800 hover:border-stone-300'
+                            : 'crm-surface bg-white border-stone-200/80 text-stone-800 hover:border-stone-300'
                     }`}
                 >
                     <p className="text-[9px] font-bold uppercase tracking-widest mb-1 opacity-60">All Leads</p>
@@ -224,7 +173,7 @@ export default function LeadsView({ currentUser, onLeadConverted }) {
                     className={`rounded-2xl p-4 border text-left transition-all cursor-pointer ${
                         activeFilter === 'NEW'
                             ? 'bg-amber-500 border-amber-500 text-white shadow-md'
-                            : 'bg-white border-amber-200/80 text-amber-900 hover:border-amber-300'
+                            : 'crm-surface bg-white border-amber-200/80 text-amber-900 hover:border-amber-300'
                     }`}
                 >
                     <p className="text-[9px] font-bold uppercase tracking-widest mb-1 opacity-80">New / Open</p>
@@ -236,7 +185,7 @@ export default function LeadsView({ currentUser, onLeadConverted }) {
                     className={`rounded-2xl p-4 border text-left transition-all cursor-pointer ${
                         activeFilter === 'CONVERTED'
                             ? 'bg-emerald-600 border-emerald-600 text-white shadow-md'
-                            : 'bg-white border-emerald-200/80 text-emerald-900 hover:border-emerald-300'
+                            : 'crm-surface bg-white border-emerald-200/80 text-emerald-900 hover:border-emerald-300'
                     }`}
                 >
                     <p className="text-[9px] font-bold uppercase tracking-widest mb-1 opacity-80">Converted</p>
@@ -248,7 +197,7 @@ export default function LeadsView({ currentUser, onLeadConverted }) {
                     className={`rounded-2xl p-4 border text-left transition-all cursor-pointer ${
                         activeFilter === 'LOST'
                             ? 'bg-rose-600 border-rose-600 text-white shadow-md'
-                            : 'bg-white border-rose-200/80 text-rose-900 hover:border-rose-300'
+                            : 'crm-surface bg-white border-rose-200/80 text-rose-900 hover:border-rose-300'
                     }`}
                 >
                     <p className="text-[9px] font-bold uppercase tracking-widest mb-1 opacity-80">Lost</p>
@@ -257,7 +206,7 @@ export default function LeadsView({ currentUser, onLeadConverted }) {
             </div>
 
             {/* Controls Bar */}
-            <div className="bg-white p-4 rounded-2xl border border-stone-150 shadow-xs flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
+            <div className="crm-surface bg-white p-4 rounded-2xl border border-stone-150 shadow-xs flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
                 <div className="relative flex-1 max-w-md">
                     <Search className="absolute left-3.5 top-2.5 w-4 h-4 text-stone-400" />
                     <input
@@ -287,7 +236,7 @@ export default function LeadsView({ currentUser, onLeadConverted }) {
             </div>
 
             {/* Leads Table */}
-            <div className="bg-white rounded-2xl border border-stone-150 shadow-xs overflow-hidden">
+            <div className="crm-surface bg-white rounded-2xl border border-stone-150 shadow-xs overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
@@ -351,7 +300,7 @@ export default function LeadsView({ currentUser, onLeadConverted }) {
                                                 {st !== 'CONVERTED' && st !== 'LOST' && (
                                                     <>
                                                         <button
-                                                            onClick={() => handleConvertLead(lead)}
+                                                            disabled={busy} onClick={() => handleConvertLead(lead)}
                                                             className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-lg text-xs font-bold border border-emerald-200 transition-colors cursor-pointer"
                                                         >
                                                             Convert
@@ -387,7 +336,7 @@ export default function LeadsView({ currentUser, onLeadConverted }) {
             {/* Add Lead Modal */}
             {showAddModal && (
                 <div className="fixed inset-0 z-50 bg-stone-900/50 backdrop-blur-sm flex items-center justify-center p-4">
-                    <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 border border-stone-150 space-y-4 animate-in zoom-in-95 duration-200">
+                    <div className="crm-surface bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 border border-stone-150 space-y-4 animate-in zoom-in-95 duration-200">
                         <div className="flex items-center justify-between border-b border-stone-150 pb-3">
                             <h3 className="text-sm font-bold text-stone-900 flex items-center gap-2">
                                 <UserPlus size={16} className="text-amber-500" /> Add New Lead
@@ -397,7 +346,8 @@ export default function LeadsView({ currentUser, onLeadConverted }) {
                             </button>
                         </div>
 
-                        <form onSubmit={handleAddLead} className="space-y-3">
+                        <form aria-busy={busy} onSubmit={handleAddLead} className="space-y-3">
+                            {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
                                     <label className="block text-xs font-bold text-stone-700 mb-1">Customer Name *</label>
@@ -423,16 +373,7 @@ export default function LeadsView({ currentUser, onLeadConverted }) {
                             </div>
 
                             <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label className="block text-xs font-bold text-stone-700 mb-1">Consumer Number</label>
-                                    <input
-                                        type="text"
-                                        value={form.consumer_number}
-                                        onChange={e => setForm(p => ({ ...p, consumer_number: e.target.value }))}
-                                        placeholder="PGVCL Consumer No"
-                                        className="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-amber-300"
-                                    />
-                                </div>
+
                                 <div>
                                     <label className="block text-xs font-bold text-stone-700 mb-1">Capacity (kW)</label>
                                     <input
@@ -444,6 +385,17 @@ export default function LeadsView({ currentUser, onLeadConverted }) {
                                         className="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-amber-300"
                                     />
                                 </div>
+                            </div>
+
+                            <ReferringAgentSelect value={form.ref_agent} onChange={value=>setForm(previous=>({...previous,ref_agent:value}))} disabled={busy}/>
+                            <div>
+                                <label htmlFor="new-lead-dealer" className="block text-xs font-bold text-stone-700 mb-1">Dealer name</label>
+                                <select id="new-lead-dealer" disabled={busy || dealerChoices.loading || Boolean(dealerChoices.error)} value={form.dealer} onChange={e=>setForm(previous=>({...previous,dealer:e.target.value}))} className="w-full rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-300">
+                                    <option value="">{dealerChoices.loading?'Loading dealers…':'Select dealer'}</option>
+                                    {operationNames(dealerChoices.rows,'channel_partner').map(name=><option key={name} value={name}>{name}</option>)}
+                                </select>
+                                {dealerChoices.error && <p role="alert" className="mt-1 text-xs text-red-700">Dealers could not be loaded: {dealerChoices.error}</p>}
+                                <div className="mt-1 flex items-center justify-between gap-2"><p className="text-xs text-stone-500">Manage dealer names in Operations.</p><button type="button" disabled={busy || dealerChoices.loading} onClick={dealerChoices.refresh} className="text-xs font-semibold text-sky-700 underline">Refresh dealers</button></div>
                             </div>
 
                             <div className="grid grid-cols-2 gap-3">
@@ -489,7 +441,7 @@ export default function LeadsView({ currentUser, onLeadConverted }) {
                                     Cancel
                                 </button>
                                 <button
-                                    type="submit"
+                                    disabled={busy} type="submit"
                                     className="px-4 py-2 bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold rounded-xl shadow-sm"
                                 >
                                     Save Lead
@@ -503,7 +455,7 @@ export default function LeadsView({ currentUser, onLeadConverted }) {
             {/* Mark as Lost Modal */}
             {selectedLeadForLost && (
                 <div className="fixed inset-0 z-50 bg-stone-900/50 backdrop-blur-sm flex items-center justify-center p-4">
-                    <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 border border-stone-150 space-y-4 animate-in zoom-in-95 duration-200">
+                    <div className="crm-surface bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 border border-stone-150 space-y-4 animate-in zoom-in-95 duration-200">
                         <div className="flex items-center justify-between border-b border-stone-150 pb-3">
                             <h3 className="text-sm font-bold text-rose-700">Mark Lead as Lost</h3>
                             <button onClick={() => setSelectedLeadForLost(null)} className="text-stone-400 hover:text-stone-600">✕</button>
@@ -526,10 +478,10 @@ export default function LeadsView({ currentUser, onLeadConverted }) {
                                 Cancel
                             </button>
                             <button
-                                onClick={handleMarkLost}
+                                disabled={busy} onClick={handleMarkLost}
                                 className="px-4 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-sm"
                             >
-                                Confirm Lost
+                                {busy ? 'Saving…' : 'Confirm Lost'}
                             </button>
                         </div>
                     </div>

@@ -18,7 +18,7 @@ function TrashDetailDrawer({ customer, onClose }) {
     const tagInfo = SUBSIDY_TAGS.find(f => f.id === customer.subsidy_tag);
     return (
         <div className="fixed inset-0 bg-stone-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-[28px] shadow-2xl w-full max-w-lg overflow-hidden border border-stone-100">
+            <div className="crm-surface bg-white rounded-[28px] shadow-2xl w-full max-w-lg overflow-hidden border border-stone-100">
                 <div className="bg-stone-700 px-6 py-5 flex justify-between items-center">
                     <div>
                         <div className="flex items-center gap-2">
@@ -101,7 +101,7 @@ export default function TrashView({ onRecover, onHardDelete, isAdmin }) {
             </div>
 
             {trashedCustomers.map(c => (
-                <div key={c.id} className="bg-white rounded-2xl border border-stone-100 shadow-sm p-4 flex items-center gap-4 hover:border-red-100 transition-all">
+                <div key={c.id} className="crm-surface bg-white rounded-2xl border border-stone-100 shadow-sm p-4 flex items-center gap-4 hover:border-red-100 transition-all">
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                             <p className="font-bold text-stone-600">{c.customer_name}</p>
@@ -137,7 +137,7 @@ export default function TrashView({ onRecover, onHardDelete, isAdmin }) {
             {/* Hard delete confirm */}
             {confirmHard && (
                 <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4">
-                    <div className="bg-white rounded-2xl p-6 w-full max-w-sm">
+                    <div className="crm-surface bg-white rounded-2xl p-6 w-full max-w-sm">
                         <div className="flex items-center gap-3 mb-4">
                             <div className="p-2 bg-red-100 rounded-full"><AlertTriangle className="w-5 h-5 text-red-600" /></div>
                             <h3 className="font-bold text-stone-800">Permanently Delete?</h3>

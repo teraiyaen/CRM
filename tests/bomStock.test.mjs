@@ -11,6 +11,7 @@ for (const value of ['-1', '1e3', '1/2', '2abc', '1.234', 'NaN', '1++2']) {
 }
 assert.throws(() => bomQuantity('2kg', 'MTR'));
 const items = createTeraiyaBomItems();
+assert.equal(items.length, 34);
 const inventory = items.slice(0,34).map(item => ({id:`item-${item.sr}`, material_description:item.name,unit:item.unit,is_sample:false}));
 const movements = bomStockMovements(items, inventory);
 assert.equal(movements.find(row=>row.inventory_id==='item-1').quantity,18);

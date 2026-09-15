@@ -37,7 +37,7 @@ export default function CustomerBomDispatchModal({ isOpen, onClose, initialCusto
     }
     useEffect(()=>{
         if(!isOpen)return;let cancelled=false;setStockLoading(true);setStockError('');
-        (async()=>{try{const rows=[];for(let start=0;;start+=500){const {data,error}=await supabase.from('godown_inventory').select('id,material_description,unit,in_stock,is_sample,sample_key').order('id').range(start,start+499);if(error)throw error;rows.push(...(data||[]));if(!data||data.length<500)break;}if(!cancelled)setInventory(rows);}catch(err){if(!cancelled)setStockError(err.message);}finally{if(!cancelled)setStockLoading(false);}})();
+        (async()=>{try{const rows=[];for(let start=0;;start+=500){const {data,error}=await supabase.from('godown_inventory').select('id,material_description,unit,in_stock,is_sample,sample_key').or('is_sample.is.null,is_sample.eq.false').order('id').range(start,start+499);if(error)throw error;rows.push(...(data||[]));if(!data||data.length<500)break;}if(!cancelled)setInventory(rows);}catch(err){if(!cancelled)setStockError(err.message);}finally{if(!cancelled)setStockLoading(false);}})();
         return()=>{cancelled=true;};
     },[isOpen]);
     async function createBom(){

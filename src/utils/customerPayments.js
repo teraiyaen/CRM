@@ -29,3 +29,15 @@ export function matchesPaymentMonth(date, month) {
 export function todayPaymentDate() {
     return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
 }
+
+// Display recorded tranche dates, not the date a CRM amount happened to be edited.
+export function lastCustomerPaymentDate(customer = {}) {
+    for (const field of ['second_tranche_date', 'first_tranche_date']) {
+        const value = customer[field];
+        if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value.trim())) continue;
+        const date = value.trim();
+        const parsed = new Date(`${date}T00:00:00Z`);
+        if (!Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === date) return date;
+    }
+    return null;
+}

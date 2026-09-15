@@ -1,0 +1,67 @@
+/* Shared application surfaces, independent of Tailwind's config cache. */
+:root {
+    --crm-green: #58A178;
+    --crm-yellow: #FDC700;
+    --crm-ink: #10271B;
+}
+@media screen {
+    .crm-login, .crm-home {
+        background: linear-gradient(125deg, #C3DFCE 0%, #E1EFE6 48%, #FFF0A6 100%);
+        color: var(--crm-ink);
+    }
+    .crm-workspace { background: #F5F7F6; color: var(--crm-ink); }
+    .crm-workspace.crm-home { background: linear-gradient(125deg, #C3DFCE 0%, #E1EFE6 48%, #FFF0A6 100%); }
+    .crm-login-card {
+        background: linear-gradient(145deg, #F2F8F4 0%, #FFFCED 100%);
+        border: 1px solid #9AC8AD;
+        border-top: 5px solid var(--crm-yellow);
+    }
+    .crm-surface { background-color: #FFFFFF; border-color: #DBE5DF; }
+    .crm-page-header {
+        background: #FFFFFF;
+        border: 1px solid #DBE5DF;
+        border-left: 3px solid var(--crm-green);
+        border-radius: 16px;
+        padding: 20px;
+        color: var(--crm-ink);
+    }
+    .crm-table-head { background: #EEF3F0; color: #1B3D2B; }
+    .crm-primary-button, .crm-nav-active {
+        background-color: var(--crm-green);
+        color: var(--crm-ink);
+        border-color: #397A55;
+    }
+    .crm-primary-button:hover, .crm-nav-active:hover { background-color: #79B591; }
+    .crm-secondary-button { background-color: var(--crm-yellow); color: var(--crm-ink); border-color: #A88100; }
+    .crm-primary-button :is(svg,span), .crm-nav-active :is(svg,span) { color: inherit; }
+    .crm-login input { background-color: #E1EFE6; border-color: #9AC8AD; color: var(--crm-ink); }
+    input:-webkit-autofill, input:-webkit-autofill:hover, input:-webkit-autofill:focus {
+        -webkit-box-shadow: 0 0 0 1000px #E1EFE6 inset;
+        -webkit-text-fill-color: #10271B;
+        caret-color: #10271B;
+    }
+    .crm-login a, .crm-login button[type="button"] { color: #2C6043; }
+}
+
+@media screen {
+    .operations-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; align-items:start; }
+    .operations-section-heading { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:14px; }
+    .operations-section-heading > div { min-width:0; }
+    .operations-section-heading h3 { font-size:14px; }
+    .operations-section-body { border-top:1px solid #DBE5DF; padding:8px 14px; }
+    .operations-section { background: #fff; border: 1px solid #DBE5DF; border-radius: 10px; overflow: hidden; }
+    .operations-icon { padding: 7px; border-radius: 10px; background: #EEF3F0; color: #2C6043; }
+    .operations-count { margin-left: 8px; padding: 2px 8px; border-radius: 6px; background: #EEF3F0; color: #465E50; font-size: 12px; }
+    .operations-name-list { list-style: none; margin: 0; padding: 0; max-height:320px; overflow-y:auto; scrollbar-width:thin; }
+    .operations-name-list li { display: flex; align-items: baseline; gap: 8px; padding: 8px 0; border-bottom: 1px solid #EEF3F0; color: #283E31; font-size: 14px; overflow-wrap: anywhere; }
+    .operations-name-list li:last-child { border-bottom: 0; }
+    .operations-row-number { width: 28px; flex-shrink: 0; color: #5E7768; font-variant-numeric: tabular-nums; }
+}
+
+.inventory-status { display:inline-block; white-space:nowrap; padding:4px 9px; border-radius:6px; font-size:12px; font-weight:600; background:#eef1ef; color:#46584d; }
+.inventory-status-sufficient { background:#e8f3ec; color:#285d40; }
+.inventory-status-low-stock { background:#fff4c4; color:#715900; }
+.inventory-status-out-of-stock { background:#fbeae8; color:#9b352b; }
+
+@media screen and (max-width:1100px) { .operations-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media screen and (max-width:700px) { .operations-grid { grid-template-columns:minmax(0,1fr); } }

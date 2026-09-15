@@ -9,25 +9,27 @@ import {
 } from 'lucide-react';
 
 export const PRIMARY_STAGES = [
-    { id: 'Vender Selection', label: '1. Vender Selection', icon: ClipboardList, color: 'teal' },
-    { id: 'Upload Agreement (Pending)', label: '2. Upload Agreement (Pending)', icon: Send, color: 'blue' },
-    { id: 'Upload Agreement', label: '3. Upload Agreement', icon: Send, color: 'blue' },
-    { id: 'Installation', label: '4. Installation', icon: Wrench, color: 'amber' },
-    { id: 'Inspection (Pending)', label: '5. Inspection (Pending)', icon: Gauge, color: 'indigo' },
-    { id: 'Inspection', label: '6. Inspection', icon: Gauge, color: 'indigo' },
-    { id: 'Subsidy Request', label: '7. Subsidy Request', icon: Tag, color: 'purple' },
-    { id: 'Subsidy Disbursal (Pending)', label: '8. Subsidy Disbursal (Pending)', icon: CheckCircle2, color: 'emerald' },
-    { id: 'Subsidy Disbursal', label: '9. Subsidy Disbursal', icon: CheckCircle2, color: 'emerald' },
-    { id: 'Subsidy Disbursal (Disbursed)', label: '10. Subsidy Disbursal (Disbursed)', icon: CheckCircle2, color: 'emerald' },
-    { id: 'COMPLETE', label: '11. COMPLETE', icon: CheckCircle2, color: 'emerald' },
+    { id: 'Registration', label: '1. Registration', icon: ClipboardList, color: 'sky' },
+    { id: 'Vender Selection', label: '2. Vendor Selection', icon: ClipboardList, color: 'teal' },
+    { id: 'Upload Agreement (Pending)', label: '3. Upload Agreement (Pending)', icon: Send, color: 'blue' },
+    { id: 'Upload Agreement', label: '4. Upload Agreement', icon: Send, color: 'blue' },
+    { id: 'Installation', label: '5. Installation', icon: Wrench, color: 'amber' },
+    { id: 'Inspection (Pending)', label: '6. Inspection (Pending)', icon: Gauge, color: 'indigo' },
+    { id: 'Inspection', label: '7. Inspection', icon: Gauge, color: 'indigo' },
+    { id: 'Subsidy Request', label: '8. Subsidy Request', icon: Tag, color: 'purple' },
+    { id: 'Subsidy Disbursal (Pending)', label: '9. Subsidy Disbursal (Pending)', icon: CheckCircle2, color: 'emerald' },
+    { id: 'Subsidy Disbursal', label: '10. Subsidy Disbursal', icon: CheckCircle2, color: 'emerald' },
+    { id: 'Subsidy Disbursal (Disbursed)', label: '11. Subsidy Disbursal (Disbursed)', icon: CheckCircle2, color: 'emerald' },
+    { id: 'COMPLETE', label: '12. COMPLETE', icon: CheckCircle2, color: 'emerald' },
 ];
 
 export const STAGE_IDS = Object.fromEntries(
     PRIMARY_STAGES.map(s => [s.id.replace(/[^a-zA-Z0-9]/g, "_").toUpperCase(), s.id])
 );
 
-// All 11 unique portal statuses in exact lifecycle order
+// All 12 unique portal statuses in exact lifecycle order
 export const PORTAL_STATUSES = [
+    'Registration',
     'Vender Selection',
     'Upload Agreement (Pending)',
     'Upload Agreement',
@@ -42,6 +44,7 @@ export const PORTAL_STATUSES = [
 ];
 
 export const PORTAL_STATUS_COLORS = {
+    'Registration': { bg: 'bg-sky-50', text: 'text-sky-700', border: 'border-sky-200', dot: 'bg-sky-500' },
     'Vender Selection':              { bg: 'bg-teal-50',    text: 'text-teal-700',    border: 'border-teal-200',    dot: 'bg-teal-500' },
     'Upload Agreement (Pending)':     { bg: 'bg-blue-50',    text: 'text-blue-700',    border: 'border-blue-200',    dot: 'bg-blue-400' },
     'Upload Agreement':              { bg: 'bg-blue-50',    text: 'text-blue-700',    border: 'border-blue-200',    dot: 'bg-blue-500' },

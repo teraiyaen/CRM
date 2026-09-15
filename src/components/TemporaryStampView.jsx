@@ -88,14 +88,14 @@ export default function TemporaryStampView() {
         finally{if(request===fileRequest.current)setFileBusy(false);}
     }
     function close() {selectionRequest.current++;clearStamp();setOpen(false);setPreview(false);setData(stampDetailsFromCustomer());}
-    return <section className="space-y-4 rounded-2xl border bg-white p-6">
+    return <section className="space-y-4 rounded-2xl border crm-surface bg-white p-6">
         <h2 className="text-lg font-bold">Stamp & Agreement</h2>
         <p className="text-sm text-stone-600">Prepare an agreement with an optional stamp as its first page. Review every value before printing. Completed document values are saved for downloading again. Uploaded stamp files are never stored.</p>
         <label className="block text-sm">Find a customer<input className="mt-1 block w-full rounded-lg border p-3" placeholder="Consumer name or consumer number" value={search} onChange={e=>setSearch(e.target.value)} /></label>
         {error&&<p role="alert" className="text-sm text-red-700">{error}</p>}
         <div className="max-h-60 overflow-y-auto">{results.map(customer=><button disabled={busy} className="block w-full border-b p-3 text-left text-sm hover:bg-amber-50 disabled:opacity-50" key={customer.id} onClick={()=>start(customer)}>{customer.consumer_name} · {customer.consumer_number}</button>)}</div>
         <button disabled={busy} className="rounded-lg bg-stone-900 px-4 py-2 text-sm text-white disabled:opacity-50" onClick={()=>start(null)}>{busy?'Fetching details…':'Enter details manually'}</button>
-        {open&&<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"><form role="dialog" aria-modal="true" aria-labelledby="stamp-details-title" className="flex max-h-[94vh] w-full max-w-4xl flex-col rounded-2xl bg-white" onSubmit={generate}>
+        {open&&<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"><form role="dialog" aria-modal="true" aria-labelledby="stamp-details-title" className="flex max-h-[94vh] w-full max-w-4xl flex-col rounded-2xl crm-surface bg-white" onSubmit={generate}>
             <header className="flex justify-between border-b p-5"><h3 id="stamp-details-title" className="font-bold">Stamp / agreement details</h3><button disabled={saving} type="button" aria-label="Close stamp details" onClick={close}>Close</button></header>
             <div className="space-y-5 overflow-y-auto p-5"><p className="text-sm text-stone-600">Consumer details come from the CRM; district and state come from MIS when available. Village and taluka must be entered separately. These values are saved with this document, without changing the customer record. The vendor signature area uses the temporary stamp.png placeholder.</p>
                 {fetchNote&&<p role="status" className="text-sm text-amber-800">{fetchNote}</p>}

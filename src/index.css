@@ -1,3 +1,4 @@
+@config "../tailwind.config.js";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -11,8 +12,8 @@
 
 body {
     font-family: 'Nunito Sans', system-ui, sans-serif;
-    background-color: #F9FAFB;
-    color: #1F2937;
+    background-color: #F7FAF8;
+    color: #283E31;
     line-height: 1.6;
 }
 
@@ -34,17 +35,17 @@ h6 {
 }
 
 ::-webkit-scrollbar-track {
-    background: #F3F4F6;
+    background: #EEF3F0;
     border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #D1D5DB;
+    background: #BCCDC2;
     border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: #9CA3AF;
+    background: #829A8B;
 }
 
 /* Modal Backdrop */
@@ -65,7 +66,7 @@ h6 {
 
 /* Gradient Background for Login */
 .gradient-bg {
-    background: linear-gradient(135deg, #EFF6FF 0%, #ECFEFF 50%, #FFFBEB 100%);
+    background: linear-gradient(135deg, #F2F8F4 0%, #E1EFE6 50%, #FFFCED 100%);
 }
 
 /* Stage Button Styles */
@@ -74,14 +75,14 @@ h6 {
 }
 
 .stage-btn:hover {
-    background-color: #EFF6FF;
-    border-left-color: #60A5FA;
+    background-color: #F2F8F4;
+    border-left-color: #58A178;
 }
 
 .stage-btn.active {
-    background-color: #DBEAFE;
-    border-left-color: #3B82F6;
-    color: #1E40AF;
+    background-color: #E1EFE6;
+    border-left-color: #397A55;
+    color: #244D37;
     font-weight: 600;
 }
 
@@ -90,21 +91,22 @@ input:focus,
 select:focus,
 textarea:focus {
     outline: none;
-    ring: 2px;
-    ring-color: #60A5FA;
-    border-color: #60A5FA;
+    outline: 2px solid #58A178;
+    outline-offset: 2px;
+    border-color: #58A178;
 }
 
 /* Button Animations */
 .btn-primary {
-    background: linear-gradient(135deg, #60A5FA 0%, #22D3EE 100%);
+    color: #10271B;
+    background: linear-gradient(135deg, #58A178 0%, #FDC700 100%);
     transition: all 0.3s ease;
 }
 
 .btn-primary:hover {
-    background: linear-gradient(135deg, #3B82F6 0%, #06B6D4 100%);
+    background: linear-gradient(135deg, #397A55 0%, #A88100 100%);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    box-shadow: 0 4px 12px rgba(88, 161, 120, 0.3);
 }
 
 /* Follow-up Chat Style */
@@ -129,11 +131,11 @@ textarea:focus {
 
     0%,
     100% {
-        border-color: #60A5FA;
+        border-color: #58A178;
     }
 
     50% {
-        border-color: #22D3EE;
+        border-color: #FDC700;
     }
 }
 
@@ -218,9 +220,9 @@ textarea:focus {
   }
 
   /* Unconstrain page scroll containers without breaking flexbox */
-  .h-screen, 
+  .h-screen,
   .w-screen,
-  .overflow-hidden, 
+  .overflow-hidden,
   .overflow-y-auto {
     height: auto !important;
     width: 100% !important;
@@ -321,4 +323,21 @@ textarea:focus {
 .doc-page b,
 .doc-page strong {
   font-weight: 700 !important;
+}
+
+/* Shared CRM brand accents. Printed documents keep their own paper styling. */
+:root { --brand-green: #58A178; --brand-yellow: #FDC700; }
+@media screen {
+    ::selection { background: #FDC700; color: #10271B; }
+    input[type="checkbox"], input[type="radio"] { accent-color: #397A55; }
+    /* Exact logo colors need dark labels for readable small text. */
+    :is(.bg-amber-400, .bg-amber-500, .bg-yellow-400, .bg-yellow-500,
+        .bg-orange-400, .bg-orange-500, .bg-sunshine-400, .bg-sunshine-500).text-white {
+        color: #10271B;
+    }
+    :is(.bg-green-500, .bg-emerald-500, .bg-teal-500, .bg-cyan-500,
+        .bg-sky-500, .bg-blue-500, .bg-indigo-500, .bg-violet-500,
+        .bg-purple-500, .bg-primary-500, .bg-brand-500).text-white {
+        color: #10271B;
+    }
 }

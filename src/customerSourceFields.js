@@ -158,11 +158,6 @@ export const CUSTOMER_FIELD_GROUPS = {
       "type": "calculated"
     },
     {
-      "key": "payment_date",
-      "label": "Payment date",
-      "type": "date"
-    },
-    {
       "key": "payment_mode_raw",
       "label": "Payment mode / date (source)",
       "type": "text"

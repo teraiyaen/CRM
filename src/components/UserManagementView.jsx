@@ -7,9 +7,9 @@ import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../supabase';
 import { logActivity, runWrite } from '../utils';
 import { APP_ROLES } from '../constants';
-import { 
-    ShieldCheck, Plus, RefreshCw, AlertTriangle, Eye, EyeOff, 
-    UserCog, X, KeyRound, Ban, Search, Edit2, Check, Loader2, Building2, Send, Lock 
+import {
+    ShieldCheck, Plus, RefreshCw, AlertTriangle, Eye, EyeOff,
+    UserCog, X, KeyRound, Ban, Search, Edit2, Check, Loader2, Building2, Send, Lock
 } from 'lucide-react';
 
 // ─── ResetPasswordModal ───────────────────────────────────────────────────────
@@ -106,7 +106,7 @@ function ResetPasswordModal({ user, onClose, onSuccess, currentUser }) {
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-150">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-stone-200 animate-in zoom-in-95 duration-150">
+            <div className="crm-surface bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-stone-200 animate-in zoom-in-95 duration-150">
                 {/* Header */}
                 <div className="bg-stone-900 px-5 py-4 flex justify-between items-center text-white">
                     <div className="flex items-center gap-2.5">
@@ -127,8 +127,8 @@ function ResetPasswordModal({ user, onClose, onSuccess, currentUser }) {
                         type="button"
                         onClick={() => { setMode('direct'); setError(''); }}
                         className={`flex-1 py-2.5 text-xs font-bold transition-all border-b-2 cursor-pointer flex items-center justify-center gap-1.5 ${
-                            mode === 'direct' 
-                                ? 'border-amber-500 text-stone-900 bg-white shadow-xs' 
+                            mode === 'direct'
+                                ? 'border-amber-500 text-stone-900 crm-surface bg-white shadow-xs'
                                 : 'border-transparent text-stone-500 hover:text-stone-800'
                         }`}
                     >
@@ -138,8 +138,8 @@ function ResetPasswordModal({ user, onClose, onSuccess, currentUser }) {
                         type="button"
                         onClick={() => { setMode('email'); setError(''); }}
                         className={`flex-1 py-2.5 text-xs font-bold transition-all border-b-2 cursor-pointer flex items-center justify-center gap-1.5 ${
-                            mode === 'email' 
-                                ? 'border-amber-500 text-stone-900 bg-white shadow-xs' 
+                            mode === 'email'
+                                ? 'border-amber-500 text-stone-900 crm-surface bg-white shadow-xs'
                                 : 'border-transparent text-stone-500 hover:text-stone-800'
                         }`}
                     >
@@ -171,17 +171,17 @@ function ResetPasswordModal({ user, onClose, onSuccess, currentUser }) {
                             <div>
                                 <label className="block text-xs font-bold text-stone-700 mb-1">New Password *</label>
                                 <div className="relative">
-                                    <input 
-                                        type={showPw ? 'text' : 'password'} 
-                                        value={newPassword} 
+                                    <input
+                                        type={showPw ? 'text' : 'password'}
+                                        value={newPassword}
                                         onChange={e => setNewPassword(e.target.value)}
                                         placeholder="Enter new password (min. 6 chars)"
                                         autoFocus
-                                        className="w-full px-3 py-2.5 pr-10 border border-stone-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-amber-400" 
+                                        className="w-full px-3 py-2.5 pr-10 border border-stone-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-amber-400"
                                     />
-                                    <button 
-                                        type="button" 
-                                        onClick={() => setShowPw(!showPw)} 
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPw(!showPw)}
                                         className="absolute right-3 top-2.5 text-stone-400 hover:text-stone-600 cursor-pointer"
                                     >
                                         {showPw ? <EyeOff size={14} /> : <Eye size={14} />}
@@ -235,7 +235,7 @@ function CreateUserModal({ onClose, onCreated, currentUser, branchOptions = [] }
     const isCP = currentUser?.user_type === 'channel_partner_office' || currentUser?.userType === 'channel_partner_office';
     const isAdmin = (currentUser?.user_type || currentUser?.userType) === 'admin';
     const partnerName = (currentUser?.channel_partner || currentUser?.name || '').trim();
-    const initialFormState = isCP 
+    const initialFormState = isCP
         ? { name: '', email: '', password: '', role: 'Channel Partner Manager', user_type: 'office2', channel_partner: partnerName }
         : { name: '', email: '', password: '', role: 'Admin', user_type: 'admin', channel_partner: '' };
     const [form, setForm] = useState(initialFormState);
@@ -318,7 +318,7 @@ function CreateUserModal({ onClose, onCreated, currentUser, branchOptions = [] }
                 if (isAuthRejection) {
                     throw new Error(raw);
                 }
-                
+
                 // Direct profile creation fallback
                 const { error: profileErr } = await supabase
                     .from('profiles')
@@ -390,7 +390,7 @@ function CreateUserModal({ onClose, onCreated, currentUser, branchOptions = [] }
 
     return (
         <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
-            <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md overflow-hidden flex flex-col">
+            <div className="crm-surface bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md overflow-hidden flex flex-col">
                 <div className="bg-stone-900 px-5 py-4 flex justify-between items-center">
                     <div>
                         <h2 className="text-lg font-bold text-white">Create New User</h2>
@@ -411,36 +411,36 @@ function CreateUserModal({ onClose, onCreated, currentUser, branchOptions = [] }
                         )}
                         <div>
                             <label className="block text-xs font-medium text-stone-600 mb-1">Full Name *</label>
-                            <input 
-                                type="text" 
+                            <input
+                                type="text"
                                 value={form.name}
                                 onChange={e => set('name', e.target.value.toUpperCase())}
                                 autoComplete="off"
                                 placeholder="e.g. RAHUL SHARMA"
-                                className="w-full px-3 py-2.5 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-300" 
+                                className="w-full px-3 py-2.5 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-300"
                             />
                         </div>
                         <div>
                             <label className="block text-xs font-medium text-stone-600 mb-1">Email *</label>
-                            <input 
-                                type="email" 
+                            <input
+                                type="email"
                                 value={form.email}
                                 onChange={e => set('email', e.target.value)}
                                 autoComplete="off"
                                 placeholder="user@example.com"
-                                className="w-full px-3 py-2.5 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-300" 
+                                className="w-full px-3 py-2.5 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-300"
                             />
                         </div>
                         <div>
                             <label className="block text-xs font-medium text-stone-600 mb-1">Temporary Password *</label>
                             <div className="relative">
-                                <input 
-                                    type={showPw ? 'text' : 'password'} 
-                                    value={form.password} 
+                                <input
+                                    type={showPw ? 'text' : 'password'}
+                                    value={form.password}
                                     onChange={e => set('password', e.target.value)}
                                     autoComplete="new-password"
                                     placeholder="Min. 6 characters"
-                                    className="w-full px-3 py-2.5 pr-10 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-300" 
+                                    className="w-full px-3 py-2.5 pr-10 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-300"
                                 />
                                 <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-3 text-stone-400 hover:text-stone-600 cursor-pointer">
                                     {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -451,8 +451,8 @@ function CreateUserModal({ onClose, onCreated, currentUser, branchOptions = [] }
                         {isCP ? (
                             <div>
                                 <label className="block text-xs font-medium text-stone-600 mb-1">Role in Your Branch *</label>
-                                <select 
-                                    value={form.user_type === 'office2' ? 'office2' : 'agent2'} 
+                                <select
+                                    value={form.user_type === 'office2' ? 'office2' : 'agent2'}
                                     onChange={e => {
                                         const val = e.target.value;
                                         if (val === 'office2') {
@@ -461,7 +461,7 @@ function CreateUserModal({ onClose, onCreated, currentUser, branchOptions = [] }
                                             setForm(prev => ({ ...prev, user_type: 'agent2', role: 'Channel Partner', channel_partner: partnerName }));
                                         }
                                     }}
-                                    className="w-full px-3 py-2.5 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-300 bg-white cursor-pointer font-semibold"
+                                    className="w-full px-3 py-2.5 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-300 crm-surface bg-white cursor-pointer font-semibold"
                                 >
                                     <option value="office2">Manager</option>
                                     <option value="agent2">Dealer</option>
@@ -473,8 +473,8 @@ function CreateUserModal({ onClose, onCreated, currentUser, branchOptions = [] }
                         ) : (
                             <div>
                                 <label className="block text-xs font-medium text-stone-600 mb-1">Role *</label>
-                                <select 
-                                    value={APP_ROLES.find(r => r.user_type === form.user_type)?.id || 'office'} 
+                                <select
+                                    value={APP_ROLES.find(r => r.user_type === form.user_type)?.id || 'office'}
                                     onChange={e => {
                                         const val = e.target.value;
                                         const selected = APP_ROLES.find(r => r.id === val);
@@ -489,7 +489,7 @@ function CreateUserModal({ onClose, onCreated, currentUser, branchOptions = [] }
                                             }));
                                         }
                                     }}
-                                    className="w-full px-3 py-2.5 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-300 bg-white cursor-pointer font-semibold"
+                                    className="w-full px-3 py-2.5 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-300 crm-surface bg-white cursor-pointer font-semibold"
                                 >
                                     {APP_ROLES.map(r => <option key={r.id} value={r.id}>{r.label}</option>)}
                                 </select>
@@ -545,7 +545,7 @@ function CreateUserModal({ onClose, onCreated, currentUser, branchOptions = [] }
                                             type="text"
                                             value={form.channel_partner || ''}
                                             onChange={e => set('channel_partner', e.target.value.toUpperCase())}
-                                            className="w-full px-3 py-2.5 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-300 bg-white font-semibold"
+                                            className="w-full px-3 py-2.5 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-300 crm-surface bg-white font-semibold"
                                             placeholder="Enter the new CPO / branch name"
                                         />
                                         <p className="text-[10px] text-stone-400 mt-1">
@@ -561,14 +561,14 @@ function CreateUserModal({ onClose, onCreated, currentUser, branchOptions = [] }
                                                     value={form.channel_partner || ''}
                                                     onChange={e => set('channel_partner', e.target.value.toUpperCase())}
                                                     placeholder="Type new branch name..."
-                                                    className="w-full px-3 py-2.5 border border-amber-400 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-300 bg-white font-bold uppercase"
+                                                    className="w-full px-3 py-2.5 border border-amber-400 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-300 crm-surface bg-white font-bold uppercase"
                                                     autoFocus
                                                 />
                                             ) : (
                                                 <select
                                                     value={form.channel_partner || ''}
                                                     onChange={e => set('channel_partner', e.target.value)}
-                                                    className="w-full px-3 py-2.5 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-300 bg-white cursor-pointer font-medium"
+                                                    className="w-full px-3 py-2.5 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-300 crm-surface bg-white cursor-pointer font-medium"
                                                 >
                                                     <option value="">Select a branch / partner...</option>
                                                     {branchOptions.map(name => <option key={name} value={name}>{name}</option>)}
@@ -607,7 +607,7 @@ function CreateUserModal({ onClose, onCreated, currentUser, branchOptions = [] }
                     <div className="border-t p-4 flex gap-3">
                         <button type="button" onClick={onClose} className="flex-1 py-2.5 border border-stone-300 text-stone-700 rounded-xl text-sm font-medium cursor-pointer">Cancel</button>
                         <button type="submit" disabled={saving}
-                            className="flex-1 py-2.5 bg-stone-900 text-white rounded-xl text-sm font-medium disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer">
+                            className="flex-1 py-2.5 crm-primary-button bg-stone-900 text-white rounded-xl text-sm font-medium disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer">
                             {saving ? 'Creating...' : <><UserCog className="w-4 h-4" /> Create User</>}
                         </button>
                     </div>
@@ -674,7 +674,7 @@ export default function UserManagementView({ currentUser }) {
         setLoading(true);
         try {
             let query = supabase.from('profiles').select('*').order('created_at', { ascending: false });
-            
+
             if (isCP) {
                 if (currentUser?.id && partnerName) {
                     query = query.or(`created_by.eq.${currentUser.id},channel_partner.ilike.${partnerName}`);
@@ -688,7 +688,7 @@ export default function UserManagementView({ currentUser }) {
             const { data, error } = await query;
             if (!error && data && data.length > 0) {
                 if (isCP) {
-                    const cpoFiltered = data.filter(p => 
+                    const cpoFiltered = data.filter(p =>
                         p.id !== currentUser?.id &&
                         p.user_type !== 'admin' &&
                         p.role !== 'Admin' &&
@@ -713,8 +713,8 @@ export default function UserManagementView({ currentUser }) {
         }
     };
 
-    useEffect(() => { 
-        fetchProfiles(); 
+    useEffect(() => {
+        fetchProfiles();
     }, [isCP, partnerName, currentUser?.id]);
 
     // ─── Bulletproof Role Change Handler ─────────────────────────────────────────
@@ -756,10 +756,10 @@ export default function UserManagementView({ currentUser }) {
             // rather than left firing on every role edit.
 
             // 3. Update local state immediately
-            setProfiles(prev => prev.map(p => p.id === profile.id ? { 
-                ...p, 
-                user_type: selected.user_type, 
-                role: selected.role 
+            setProfiles(prev => prev.map(p => p.id === profile.id ? {
+                ...p,
+                user_type: selected.user_type,
+                role: selected.role
             } : p));
 
             showToast('success', `Role for ${profile.name} updated to ${selected.label}`);
@@ -1232,23 +1232,23 @@ export default function UserManagementView({ currentUser }) {
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                    <button 
-                        onClick={fetchProfiles} 
-                        className="p-2 border border-stone-200 hover:border-stone-300 bg-white rounded-xl text-stone-600 hover:bg-stone-50 transition-colors cursor-pointer shadow-xs"
+                    <button
+                        onClick={fetchProfiles}
+                        className="p-2 border border-stone-200 hover:border-stone-300 crm-surface bg-white rounded-xl text-stone-600 hover:bg-stone-50 transition-colors cursor-pointer shadow-xs"
                         title="Refresh User List"
                     >
                         <RefreshCw className="w-4 h-4" />
                     </button>
-                    <button 
+                    <button
                         onClick={() => setShowCreateModal(true)}
-                        className="flex items-center gap-2 bg-stone-900 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-stone-800 transition-all cursor-pointer shadow-sm"
+                        className="flex items-center gap-2 crm-primary-button bg-stone-900 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-stone-800 transition-all cursor-pointer shadow-sm"
                     >
                         <Plus className="w-4 h-4" /> Create User
                     </button>
                 </div>
             </div>
 
-            <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
+            <div className="crm-surface bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
                 {/* Search */}
                 <div className="border-b border-stone-100 p-4 bg-stone-50/50 flex flex-col sm:flex-row gap-2">
                     <div className="relative flex-1">
@@ -1261,14 +1261,14 @@ export default function UserManagementView({ currentUser }) {
                             placeholder="Search users by name, role, or channel partner..."
                             value={searchQuery}
                             onChange={e => setSearchQuery(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2.5 bg-white border border-stone-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-1 focus:ring-amber-500 placeholder:text-stone-400"
+                            className="w-full pl-10 pr-4 py-2.5 crm-surface bg-white border border-stone-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-1 focus:ring-amber-500 placeholder:text-stone-400"
                         />
                     </div>
 
                     <select
                         value={roleFilter}
                         onChange={e => setRoleFilter(e.target.value)}
-                        className="px-3 py-2.5 bg-white border border-stone-200 rounded-xl text-xs font-bold text-stone-700 focus:outline-none focus:ring-1 focus:ring-amber-500 cursor-pointer sm:w-56"
+                        className="px-3 py-2.5 crm-surface bg-white border border-stone-200 rounded-xl text-xs font-bold text-stone-700 focus:outline-none focus:ring-1 focus:ring-amber-500 cursor-pointer sm:w-56"
                     >
                         <option value="all">All roles ({(profiles || []).length})</option>
                         {APP_ROLES.map(r => (
@@ -1383,7 +1383,7 @@ export default function UserManagementView({ currentUser }) {
                                                                 if (e.key === 'Enter') handleUpdateEmail(profile.id, tempEmail);
                                                                 if (e.key === 'Escape') setEditingEmailId(null);
                                                             }}
-                                                            className="px-2.5 py-1 border border-stone-300 rounded-lg text-xs bg-white focus:outline-none focus:ring-1 focus:ring-amber-500 w-full font-medium"
+                                                            className="px-2.5 py-1 border border-stone-300 rounded-lg text-xs crm-surface bg-white focus:outline-none focus:ring-1 focus:ring-amber-500 w-full font-medium"
                                                             placeholder="New email address..."
                                                             autoFocus
                                                         />
@@ -1440,7 +1440,7 @@ export default function UserManagementView({ currentUser }) {
                                                     value={profile.user_type === 'office2' ? 'office2' : 'agent2'}
                                                     disabled={isUpdating}
                                                     onChange={e => handleRoleChange(profile, e.target.value)}
-                                                    className="px-2.5 py-1 bg-white border border-stone-300 rounded-xl text-xs font-bold text-stone-800 focus:outline-none focus:ring-1 focus:ring-amber-500 cursor-pointer shadow-xs"
+                                                    className="px-2.5 py-1 crm-surface bg-white border border-stone-300 rounded-xl text-xs font-bold text-stone-800 focus:outline-none focus:ring-1 focus:ring-amber-500 cursor-pointer shadow-xs"
                                                 >
                                                     <option value="office2">Manager</option>
                                                     <option value="agent2">Dealer</option>
@@ -1450,11 +1450,11 @@ export default function UserManagementView({ currentUser }) {
                                         ) : (
                                             /* Admin Master Role Selector across all 8 roles */
                                             <div className="flex items-center gap-1.5">
-                                                <select 
-                                                    value={APP_ROLES.find(r => r.user_type === profile.user_type)?.id || 'office'} 
+                                                <select
+                                                    value={APP_ROLES.find(r => r.user_type === profile.user_type)?.id || 'office'}
                                                     disabled={isUpdating}
                                                     onChange={e => handleRoleChange(profile, e.target.value)}
-                                                    className="px-2.5 py-1.5 bg-white border border-stone-300 rounded-xl text-xs font-bold text-stone-850 focus:outline-none focus:ring-1 focus:ring-amber-500 cursor-pointer shadow-xs disabled:opacity-50"
+                                                    className="px-2.5 py-1.5 crm-surface bg-white border border-stone-300 rounded-xl text-xs font-bold text-stone-850 focus:outline-none focus:ring-1 focus:ring-amber-500 cursor-pointer shadow-xs disabled:opacity-50"
                                                 >
                                                     {APP_ROLES.map(r => (
                                                         <option key={r.id} value={r.id}>{r.label}</option>
@@ -1482,7 +1482,7 @@ export default function UserManagementView({ currentUser }) {
                                                             }
                                                             if (e.key === 'Enter') handleUpdatePartner(profile.id, tempPartner);
                                                         }}
-                                                        className="px-2.5 py-1 border border-amber-400 rounded-lg text-xs bg-white focus:outline-none focus:ring-1 focus:ring-amber-500 w-full font-bold uppercase"
+                                                        className="px-2.5 py-1 border border-amber-400 rounded-lg text-xs crm-surface bg-white focus:outline-none focus:ring-1 focus:ring-amber-500 w-full font-bold uppercase"
                                                         autoFocus
                                                     />
                                                 ) : (
@@ -1495,7 +1495,7 @@ export default function UserManagementView({ currentUser }) {
                                                                 setIsCustomPartner(false);
                                                             }
                                                         }}
-                                                        className="px-2.5 py-1 border border-stone-300 rounded-lg text-xs bg-white focus:outline-none focus:ring-1 focus:ring-amber-500 w-full font-medium cursor-pointer"
+                                                        className="px-2.5 py-1 border border-stone-300 rounded-lg text-xs crm-surface bg-white focus:outline-none focus:ring-1 focus:ring-amber-500 w-full font-medium cursor-pointer"
                                                         autoFocus
                                                     >
                                                         <option value="">None (universal - no branch)</option>

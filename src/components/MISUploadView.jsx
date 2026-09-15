@@ -818,7 +818,7 @@ export default function MISUploadView({ role = 'admin' }) {
     return (
         <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-6">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-stone-200/80 shadow-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 crm-surface bg-white p-6 rounded-2xl border border-stone-200/80 shadow-xs">
                 <div className="space-y-1">
                     <div className="flex items-center gap-2.5">
                         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 text-white flex items-center justify-center shadow-xs">
@@ -950,8 +950,8 @@ export default function MISUploadView({ role = 'admin' }) {
                     onClick={() => setActiveFilter('all')}
                     className={`relative p-5 rounded-2xl transition-all duration-150 cursor-pointer shadow-xs ${
                         activeFilter === 'all'
-                            ? 'bg-stone-900 text-white shadow-md ring-4 ring-stone-200'
-                            : 'bg-white border border-stone-200 hover:border-stone-300 hover:shadow-sm text-stone-800'
+                            ? 'crm-primary-button bg-stone-900 text-white shadow-md ring-4 ring-stone-200'
+                            : 'crm-surface bg-white border border-stone-200 hover:border-stone-300 hover:shadow-sm text-stone-800'
                     }`}
                 >
                     <div className="flex items-center justify-between">
@@ -1065,13 +1065,13 @@ export default function MISUploadView({ role = 'admin' }) {
             </div>
 
             {/* Customer Records Feed Container */}
-            <div className="bg-white rounded-2xl border border-stone-200 shadow-xs overflow-hidden">
+            <div className="crm-surface bg-white rounded-2xl border border-stone-200 shadow-xs overflow-hidden">
                 {/* Single Consolidated Action Bar */}
                 <div className="p-4 border-b border-stone-200 bg-stone-50/70 flex flex-col md:flex-row md:items-center justify-between gap-3">
                     {/* Left: Active Filter Status */}
                     <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-xs font-semibold text-stone-500">Active View:</span>
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-stone-900 text-white shadow-xs">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold crm-primary-button bg-stone-900 text-white shadow-xs">
                             {activeFilter === 'all' && `All Records (${counts.total})`}
                             {activeFilter === 'stage_changed' && `🔄 Stage Changed (${counts.stageChanged})`}
                             {activeFilter === 'stage_same' && `⏸️ Stage Same (${counts.stageSame})`}
@@ -1113,7 +1113,7 @@ export default function MISUploadView({ role = 'admin' }) {
                                 value={searchFilter}
                                 onChange={e => setSearchFilter(e.target.value)}
                                 placeholder="Search consumer, stage, app #..."
-                                className="pl-9 pr-7 py-1.5 text-xs bg-white border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-300 w-56 md:w-64 transition-all"
+                                className="pl-9 pr-7 py-1.5 text-xs crm-surface bg-white border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-300 w-56 md:w-64 transition-all"
                             />
                             {searchFilter && (
                                 <button 
@@ -1130,7 +1130,7 @@ export default function MISUploadView({ role = 'admin' }) {
                                 <select
                                     value={selectedStageFilter}
                                     onChange={e => setSelectedStageFilter(e.target.value)}
-                                    className="bg-white border border-stone-200 rounded-xl px-3 py-1.5 text-xs text-stone-700 font-semibold focus:outline-none focus:ring-2 focus:ring-amber-300 cursor-pointer shadow-2xs"
+                                    className="crm-surface bg-white border border-stone-200 rounded-xl px-3 py-1.5 text-xs text-stone-700 font-semibold focus:outline-none focus:ring-2 focus:ring-amber-300 cursor-pointer shadow-2xs"
                                 >
                                     <option value="all">All Stages ({allItems.length})</option>
                                     {uniqueStages.map(st => {

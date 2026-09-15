@@ -148,7 +148,7 @@ export default function ActivityLogView() {
                 <select
                     value={userFilter}
                     onChange={e => setUserFilter(e.target.value)}
-                    className="bg-white border border-stone-200 rounded-xl px-3 py-1.5 text-[11px] font-bold text-stone-700 focus:outline-none focus:ring-1 focus:ring-amber-400 cursor-pointer shadow-xs max-w-[190px]"
+                    className="crm-surface bg-white border border-stone-200 rounded-xl px-3 py-1.5 text-[11px] font-bold text-stone-700 focus:outline-none focus:ring-1 focus:ring-amber-400 cursor-pointer shadow-xs max-w-[190px]"
                 >
                     <option value="all">Everyone</option>
                     {actors.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
@@ -158,7 +158,7 @@ export default function ActivityLogView() {
                 <select
                     value={actionFilter}
                     onChange={e => setActionFilter(e.target.value)}
-                    className="bg-white border border-stone-200 rounded-xl px-3 py-1.5 text-[11px] font-bold text-stone-700 focus:outline-none focus:ring-1 focus:ring-amber-400 cursor-pointer shadow-xs"
+                    className="crm-surface bg-white border border-stone-200 rounded-xl px-3 py-1.5 text-[11px] font-bold text-stone-700 focus:outline-none focus:ring-1 focus:ring-amber-400 cursor-pointer shadow-xs"
                 >
                     <option value="all">All actions</option>
                     {['create', 'update', 'stage_change', 'delete', 'email', 'error_occurred', 'bom_created', 'agreement_created', 'stock_received', 'stock_deducted'].map(a => (
@@ -185,7 +185,7 @@ export default function ActivityLogView() {
                     type="button"
                     onClick={() => fetchLogs()}
                     disabled={refreshing}
-                    className="flex items-center gap-1.5 bg-white border border-stone-200 rounded-xl px-3 py-1.5 text-[11px] font-bold text-stone-600 hover:text-amber-600 hover:border-amber-200 transition-colors disabled:opacity-50 cursor-pointer shadow-xs"
+                    className="flex items-center gap-1.5 crm-surface bg-white border border-stone-200 rounded-xl px-3 py-1.5 text-[11px] font-bold text-stone-600 hover:text-amber-600 hover:border-amber-200 transition-colors disabled:opacity-50 cursor-pointer shadow-xs"
                 >
                     <RefreshCw className={`w-3 h-3 ${refreshing ? 'animate-spin' : ''}`} />
                     {refreshing ? 'Refreshing…' : 'Refresh'}
@@ -208,7 +208,7 @@ export default function ActivityLogView() {
                     )}
                 </div>
             ) : logs.map(log => (
-                <div key={log.id} className="bg-white rounded-xl p-4 border border-stone-100 shadow-sm flex items-start gap-3">
+                <div key={log.id} className="crm-surface bg-white rounded-xl p-4 border border-stone-100 shadow-sm flex items-start gap-3">
                     {(() => {
                         const c = ACTION_COLORS[log.action] || { bg: 'bg-stone-100', text: 'text-stone-700', border: 'border-stone-200' };
                         return (
@@ -234,7 +234,7 @@ export default function ActivityLogView() {
                             type="button"
                             onClick={() => fetchLogs({ append: true })}
                             disabled={loadingMore}
-                            className="bg-white border border-stone-200 rounded-xl px-4 py-2 text-[11px] font-bold text-stone-600 hover:text-amber-600 hover:border-amber-200 transition-colors disabled:opacity-50 cursor-pointer shadow-xs"
+                            className="crm-surface bg-white border border-stone-200 rounded-xl px-4 py-2 text-[11px] font-bold text-stone-600 hover:text-amber-600 hover:border-amber-200 transition-colors disabled:opacity-50 cursor-pointer shadow-xs"
                         >
                             {loadingMore ? 'Loading…' : `Load ${PAGE_SIZE} more`}
                         </button>

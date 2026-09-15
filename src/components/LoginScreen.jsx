@@ -86,8 +86,8 @@ export default function LoginScreen({ onLogin, initialError = '' }) {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-stone-100 p-4 sm:p-6">
-            <div className="bg-white p-8 sm:p-10 rounded-[32px] shadow-2xl w-full max-w-md text-center border border-stone-200 animate-in fade-in zoom-in-95 duration-200">
+        <div className="crm-login min-h-screen flex items-center justify-center bg-gradient-to-br from-brand-100 via-stone-50 to-sunshine-100 p-4 sm:p-6">
+            <div className="crm-login-card bg-white p-8 sm:p-10 rounded-[32px] shadow-2xl w-full max-w-md text-center border border-brand-200 border-t-4 border-t-sunshine-500 animate-in fade-in zoom-in-95 duration-200">
                 <BrandMark size="lg" className="justify-center mb-5" />
                 <h1 className="text-lg font-black text-stone-900 tracking-tight">Customer Relationship Manager</h1>
                 <p className="text-stone-400 font-semibold text-xs mb-8 mt-1">Solar Operations &amp; Management Portal</p>
@@ -148,7 +148,7 @@ export default function LoginScreen({ onLogin, initialError = '' }) {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full bg-stone-900 text-white py-3.5 rounded-2xl font-extrabold hover:bg-stone-800 transition-all shadow-lg shadow-stone-300 flex items-center justify-center gap-2 disabled:opacity-60 cursor-pointer text-xs uppercase tracking-wider"
+                            className="crm-primary-button w-full bg-brand-500 text-brand-950 py-3.5 rounded-2xl font-extrabold hover:bg-brand-400 transition-all shadow-lg shadow-stone-300 flex items-center justify-center gap-2 disabled:opacity-60 cursor-pointer text-xs uppercase tracking-wider"
                         >
                             {loading ? 'Authenticating...' : <><LogIn size={15} /> Sign In</>}
                         </button>
@@ -179,7 +179,7 @@ export default function LoginScreen({ onLogin, initialError = '' }) {
                             <p className="text-red-500 text-xs mb-4 bg-red-50 p-2 rounded-xl border border-red-200">{resetError}</p>
                         )}
                         <button type="submit" disabled={resetLoading || resetStatus === 'sent'}
-                            className="w-full bg-stone-900 text-white py-3.5 rounded-2xl font-bold hover:bg-stone-800 transition-all shadow-lg shadow-stone-200 flex items-center justify-center gap-2 disabled:opacity-60 mb-4 cursor-pointer text-xs">
+                            className="crm-primary-button w-full bg-brand-500 text-brand-950 py-3.5 rounded-2xl font-bold hover:bg-brand-400 transition-all shadow-lg shadow-stone-200 flex items-center justify-center gap-2 disabled:opacity-60 mb-4 cursor-pointer text-xs">
                             {resetLoading ? 'Sending...' : resetStatus === 'sent' ? 'Email Sent ✓' : 'Send Reset Link'}
                         </button>
                         <button type="button" onClick={() => { setShowForgot(false); setResetStatus(''); setResetError(''); }}

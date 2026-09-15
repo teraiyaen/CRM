@@ -18,6 +18,19 @@ export default function HistoryTab({
 }) {
     return (
         <div className="space-y-8 animate-in fade-in duration-300">
+            <section id="section-customer-notes">
+                <SectionHeader title="Customer Notes / Remarks" id="customer-notes" icon={ShieldCheck} isEditable={isEditable} editingSection={editingSection} setEditingSection={setEditingSection} />
+                {editingSection === 'customer-notes' ? (
+                    <textarea aria-label="Customer notes and remarks" value={editData.remarks || ''} onChange={e => handleChange('remarks', e.target.value)}
+                        className="w-full p-4 border rounded-xl text-sm bg-white focus:ring-1 focus:ring-brand-400 outline-none" rows={5}
+                        placeholder="Customer notes and remarks..." />
+                ) : (
+                    <div className="bg-white p-4 rounded-xl border border-stone-200 text-sm text-stone-700 whitespace-pre-wrap break-words">
+                        {editData.remarks || 'No customer notes recorded yet.'}
+                    </div>
+                )}
+            </section>
+
             <section id="section-rem">
                 <SectionHeader title="Internal Remarks (Staff Only)" id="rem" icon={ShieldCheck} isEditable={isEditable} editingSection={editingSection} setEditingSection={setEditingSection} />
                 {editingSection === 'rem' ? (

@@ -1,3 +1,4 @@
+import { todayPaymentDate } from './customerPayments';
 import { AGREEMENT_COMPANY, PLACEHOLDER_VENDOR_STAMP } from '../agreementCompany';
 
 export function stampDetailsFromCustomer(customer = {}, mis = {}) {
@@ -9,7 +10,7 @@ export function stampDetailsFromCustomer(customer = {}, mis = {}) {
         taluka: '',
         district: mis.district_name || '',
         state: mis.state_name || '',
-        executionDate: '',
+        executionDate: todayPaymentDate(),
         vendorName: AGREEMENT_COMPANY.name,
         vendorAddress: AGREEMENT_COMPANY.address,
         firstPartySignature: '', secondPartyStamp: PLACEHOLDER_VENDOR_STAMP, secondPartySignature: '',

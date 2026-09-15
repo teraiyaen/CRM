@@ -39,7 +39,6 @@ export const TERAIYA_BOM_DEFAULT_ITEMS = [
 
 export const createTeraiyaBomItems = () => [
     ...TERAIYA_BOM_DEFAULT_ITEMS.map(item => ({ ...item, mergeLastColumns: false, detail: '' })),
-    ...Array.from({ length: 4 }, (_, index) => ({ sr: 35 + index, name: '', col1: '', col2: '', col3: '', unit: '', remark: '', detail: '' })),
 ];
 export function isFixedBomCell(sr, key) {
     if (['col1', 'col2', 'col3'].includes(key)) return false;
