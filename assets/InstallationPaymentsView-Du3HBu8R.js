@@ -1,1 +1,0 @@
-import{t as e}from"./jsx-runtime-DXP-cb6p.js";import t from"./PartnerPaymentsView-D1FOvlX2.js";var n=e();function r(e){return(0,n.jsx)(t,{...e,kind:`vendor`})}export{r as default};
